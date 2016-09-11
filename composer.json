@@ -1,0 +1,26 @@
+{
+    "name": "maer/entity",
+    "description": "Create predefined entity objects",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Magnus Eriksson",
+            "email": "mange@reloop.se"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Maer\\Entity\\": "src/"
+        }
+    },
+    "minimum-stability": "stable",
+    "require": {
+        "php": ">=5.5.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "4.7.*"
+    },
+    "scripts": {
+        "test": "phpunit --report-useless-tests --strict-coverage --colors=always"
+    }
+}

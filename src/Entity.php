@@ -58,7 +58,7 @@ abstract class Entity implements JsonSerializable
     public function __get($key)
     {
         if (!array_key_exists($key, $this->_params)) {
-            throw new \Exception('Class ' . __CLASS__ . ' has no parameter called ' . $key);
+            throw new UnknownPropertyException("Unknown property: '{$key}'");
         }
 
         return $this->_params[$key];
@@ -76,7 +76,7 @@ abstract class Entity implements JsonSerializable
                 return;
             }
 
-            throw new \Exception('Class ' . __CLASS__ . ' has no parameter called ' . $key);
+            throw new UnknownPropertyException("Unknown property: '{$key}'");
         }
 
         switch(gettype($this->_params[$key])) {

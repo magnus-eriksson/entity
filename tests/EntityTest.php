@@ -302,4 +302,22 @@ class EntityTest extends PHPUnit_Framework_TestCase
             "has non existing property"
         );
     }
+
+
+    /**
+     * @expectedException Maer\Entity\UnknownPropertyException
+     */
+    public function testGetException()
+    {
+        $value = $this->entity->nonExistinProperty;
+    }
+
+
+    /**
+     * @expectedException Maer\Entity\UnknownPropertyException
+     */
+    public function testSetException()
+    {
+        $this->entity->nonExistinProperty = "something";
+    }
 }

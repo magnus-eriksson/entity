@@ -176,9 +176,10 @@ abstract class Entity implements JsonSerializable
      * Convert array to entities
      *
      * @param  array    $data
+     * @param  string   $index Set the value in this key as index
      * @return Entity|array
      */
-    public static function make(array $data = [])
+    public static function make(array $data = [], $index = null)
     {
         if (count($data) < 1) {
             return static::populate([]);
@@ -192,8 +193,14 @@ abstract class Entity implements JsonSerializable
         if ($multi) {
             $list = [];
             foreach($data as $item) {
+                if ($index && array_key_exists($index, $item)) {
+                    $key = $item[$index];
+                    $list[$key] = static::populate($item);
+                    continue;
+                }
                 $list[] = static::populate($item);
             }
+
             return $list;
         }
 

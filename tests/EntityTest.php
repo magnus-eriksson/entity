@@ -65,6 +65,25 @@ class EntityTest extends PHPUnit_Framework_TestCase
             $entities,
             "Make mutliple"
         );
+
+        // Collection with defined key
+        $entities = TestEntity::make([$this->data, ['int' => 123]], 'int');
+
+        $this->assertTrue(
+            is_array($entities),
+            "Make multiple custom key"
+        );
+
+        $this->assertContainsOnlyInstancesOf(
+            'TestEntity',
+            $entities,
+            "Make mutliple custom key"
+        );
+
+        $this->assertCount(2, $entities, 'Multiple instances count');
+
+        $this->assertArrayHasKey('1337', $entities, "Multiple has custom key");
+        $this->assertArrayHasKey('123', $entities, "Multiple has custom key");
     }
 
 

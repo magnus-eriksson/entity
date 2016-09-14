@@ -54,6 +54,8 @@ abstract class Entity implements JsonSerializable
 
     /**
      * Get a value from the parameter pool
+     *
+     * @throws UnknownPropertyException
      */
     public function __get($key)
     {
@@ -68,6 +70,8 @@ abstract class Entity implements JsonSerializable
     /**
      * Set a value in the parameter pool and cast it to the same type as
      * the default value
+     *
+     * @throws UnknownPropertyException
      */
     public function __set($key, $value)
     {

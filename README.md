@@ -18,102 +18,218 @@ $ composer require maer/entity 1.*
 
 ## Usage
 
-### Defining an entity
+- [**Define an entity**](#define-an-entity)
+    - [Default property values and types](#default-property-values-and-types)
+    - [Protect properties](#protect-properties)
+- [**Instantiate an entity**](#instantiate-an-entity)
+    - [Create a default entity](#create-a-default-entity)
+    - [Convert an array to entity](#convert-an-array-to-entity)
+    - [Convert a multidimensional array to a list of entities](#convert-a-multidimensional-array-to-a-list-of-entities)
+- [**Helper methods**](#helper-methods)
+    - [Check if a property exists](#check-if-a-property-exists)
+    - [Get a property formatted as date](#get-a-property-formatted-as-date)
+    - [Convert an entity to arrays](#convert-an-entity-to-arrays)
+    - [Convert an entity to JSON](#convert-an-entity-to-json)
+    - [Create your own helpers](#create-your-own-helpers)
 
-Create a class which extends the `\Maer\Entity\Entity` class and define the properties and default values.
+
+## Define an entity
+
+When defining an entity, you start create a new class which extends `Maer\Entity\Entity`:
 
 ```php
+class Hero extends Maer\Entity\Enity {}
+```
 
-class Person extends \Maer\Entity\Entity
+### Default property values and types
+
+Creating an empty entity isn't that exiting. We should define some properties and default values:
+
+```php
+class Hero extends Maer\Entity\Enity
 {
-    // Create the entity parameters
     protected $_params = [
-        'id'         => 0,
-        'firstname'  => null,
-        'surname'    => null,
-        'is_nice'    => false,
-        'created_at' => null,
+        'id'        => 0,
+        'name'      => '',
+        'awesome'   => false,
+        'someFloat' => 0.0,
+        'anything'  => null,
     ];
 }
 ```
 
-When you set the default values, you also define the default data types. For example, `id` is set to `0` which means that every time you set that property, it will be cast as an integer: `$Person->id = "1";` will cast `"0"` to `0`.
-
-If you define a property as `null`, it won't alter the value when it's set, so if you still need flexibility on any property, just set it as `null`.
-
-The data types that will automatically be cast are:
-* __Intergers__
-* __Booleans__
-* __Floats/Doubles__ _(will be cast as floats)_
-* __Strings__
+When you define a default value, it's important that you define it with the correct data type. Later on when you're setting/updating a property value, the new value will be cast to the same data type as the default. The data types that are supported for automatic casting are: `integers`, `strings`, `booleans` and `floats/doubles`. If the default value is `null`, it can be set to anything.
 
 
-## Instantiate
+### Protect properties
 
-### Single entity
-
-There are two ways of instantiate a single entity.
-
-The first way is by an ordinary class instantiation:
+If you want to be able to use a property in your code, but don't want to expose it in, say, an API response, you can "protect" it. An example would be a user entity having a password hash. To protect (remove) a property on JSON serialization or when fetching it as an array, you can protect it like this:
 
 ```php
-// Get an entity object with default values
-$person = new Person();
+class User extends Maer\Entity\Enity
+{
+    protected $_params = [
+        'id'           => 0,
+        'name'         => '',
+        'passwordHash' => '',
+    ];
 
-// Get an entity object and set some, or all, values
-$person = new Person([
-    'id'        => 1,
-    'firstname' => 'Chuck',
-    'surname'   => 'Norris',
-]);
+    protected $_protect = [
+        'passwordHash',
+        // add more if needed
+    ];
+}
 ```
 
-The second way is to use the built in `Entity::make()`-method:
+## Instantiate an entity
+
+You can instantiate an entity in several ways, depending on your needs.
+
+### Create a default entity
+
+Since it's a class, you can create a new entity with the default values like this:
 
 ```php
-// Get an entity object with default values
-$person = Person::make();
+$hero = new Hero();
 
-// Get an entity object and set some, or all, values
-$person = Person::make([
-    'id'        => 1,
-    'firstname' => 'Chuck',
-    'surname'   => 'Norris',
-]);
+echo $hero->id;
+// Returns: 0, just as we defined earlier.
+
 ```
 
-These two ways looks kind of similar, so why have `make()`? The answer is in the next part...
-
-### Multiple Entities
-
-If you're instantiating the entities using `new Person();` and you have a collection (array) with data for several entities, like a database result, you would need to loop through the result and manually instantiate every entity. Since this just means that you need to write more code, you can let the `make()` method do this for you.
-
+You can also set new values for it by passing an array to the constructor:
 ```php
-// Get one entity object
-$person = Person::make([
-    'id'        => 1,
-    'firstname' => 'Chuck',
-    'surname'   => 'Norris',
+$hero = new Hero([
+    'id' => 1337,
 ]);
 
-// Get an array with entity objects
-$person = Person::make([
+echo $hero->id;
+// Returns: 1337, just as we defined earlier.
+
+```
+
+Just remember that the values will be cast'ed to the same datatype as the default value.
+
+### Convert an array to entity
+
+When creating just one entity, you can use the above constructor method, or you can use the static `Entity::make()` method:
+```php
+$hero = Hero::make([
+    'id' => 1337,
+]);
+
+echo $hero->id;
+// Returns: 1337
+
+```
+
+### Convert a multidimensional array to a list of entities
+
+The static `Entity::make()` method is a bit more clever and can do more than just give you one entity. If you pass a multidimensional array, it will give you an array with entities back:
+
+```php
+$dataSet = [
     [
-        'id'        => 1,
-        'firstname' => 'Chuck',
-        'surname'   => 'Norris'
+        'id'   => 1337,
+        'name' => 'Chuck Norris',
     ],
     [
-        'id'        => 2,
-        'firstname' => 'Lorem',
-        'surname'   => 'Ipsum'
-    ]
-]);
+        'id'   => 12345,
+        'name' => 'Some guy',
+    ],
+];
+
+$heroes = Hero::make($dataSet);
+
+echo $heroes[0]->id;
+// Returns: 1337
+```
+
+You can also define what property should be used as the array key, making it an associated array.
+
+```php
+$heroes = Hero::make($dataSet, 'id');
+
+echo $heroes[1337]->name;
+// Returns: "Chuck Norris"
 
 ```
 
-...more documentation is coming soon...
+## Helper methods
 
+### Check if a property exists
+
+If you try to get or set a property that doesn't exist, an `Maer\Entities\UnknowPropertyException` will be thrown, except from when the entity is created thru the `new Entity` or `Entity::make()`-method.
+
+To check if a property exists, use the `has()`-method:
+
+```php
+if ($hero->has('name')) {
+    // Yes, it exists and can be used
+} else {
+    // No, doesn't exist. Try to get/set it, an exception will be thrown
+}
+```
+
+### Get a property formatted as date
+
+If you have a date property, you can get it formatted by using the `date()`, method.
+
+
+```php
+$hero = Hero::make([
+    'someDate' => '2016-09-14 23:35:00',
+]);
+
+echo $hero->date('someDate', "F j, Y");
+// Return: "September 14, 2016"
+```
+
+The first argument is the name of the property holding the value, the second argument is the format (defaults to: "F j, Y").
+
+This method also works for properties holding unix timestamps.
+
+### Convert an entity to arrays
+
+If you need to convert an entity to array, use `toArray()`:
+
+```php
+$array = $hero->toArray();
+// Return: ['id' => 1337, 'name' => 'Chuck Norris', ...]
+```
+
+_All properties in the `$_protect = []` list will be removed._
+
+### Convert an entity to JSON
+
+The `Entity`-class implements the `JsonSerializable`-interface, so just use `json_encode()`:
+
+```php
+$json = json_encode($hero);
+// Return: "{"id": 1337, "name": "Chuck Norris", ...}"
+```
+
+_All properties in the `$_protect = []` list will be removed._
+
+### Create your own helpers
+
+You can of course create your own helpers:
+
+```php
+class Hero extends Maer\Entity\Entity
+{
+    protected $_params = [
+        // Some properties
+    ];
+
+    public function myNewHelper()
+    {
+        // Do stuff...
+    }
+}
+```
+
+And just access it like any other method: `$hero->myNewHelper()`
 
 ## Note
 If you have any questions, suggestions or issues, let me know!

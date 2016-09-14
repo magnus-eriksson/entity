@@ -52,6 +52,14 @@ class EntityTest extends PHPUnit_Framework_TestCase
             "Make single"
         );
 
+        $emptySingle = TestEntity::make(null);
+
+        $this->assertInternalType(
+            'null',
+            $emptySingle,
+            "Make with null returns null"
+        );
+
         // Collection of instances
         $entities = TestEntity::make([$this->data, $this->data]);
 
@@ -64,6 +72,20 @@ class EntityTest extends PHPUnit_Framework_TestCase
             'TestEntity',
             $entities,
             "Make mutliple"
+        );
+
+        $emptyCollection = TestEntity::make([]);
+
+        $this->assertInternalType(
+            'array',
+            $emptyCollection,
+            "Make with empty array returns array"
+        );
+
+        $this->assertCount(
+            0,
+            $emptyCollection,
+            "Make with empty array returns array"
         );
 
         // Collection with defined key

@@ -179,10 +179,14 @@ abstract class Entity implements JsonSerializable
      * @param  string   $index Set the value in this key as index
      * @return Entity|array
      */
-    public static function make(array $data = [], $index = null)
+    public static function make($data = null, $index = null)
     {
+        if (!is_array($data)) {
+            return null;
+        }
+
         if (count($data) < 1) {
-            return static::populate([]);
+            return [];
         }
 
         // Check if it is a multi dimensional array

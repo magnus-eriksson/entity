@@ -68,12 +68,26 @@ abstract class Entity implements JsonSerializable
 
 
     /**
-     * Set a value in the parameter pool and cast it to the same type as
-     * the default value
+     * Alias for ::setParam()
      *
      * @throws UnknownPropertyException
      */
     public function __set($key, $value)
+    {
+        $this->setParam($key, $value);
+    }
+
+
+    /**
+     * Set a value in the parameter pool and cast it to the same type as
+     * the default value
+     *
+     * @param  string $key
+     * @param  mixed  $value
+     *
+     * @throws UnknownPropertyException
+     */
+    protected function setParam($key, $value)
     {
         if (!array_key_exists($key, $this->_params)) {
             if ($this->_ignoreExisting) {
@@ -102,7 +116,6 @@ abstract class Entity implements JsonSerializable
                 break;
         }
     }
-
 
     /**
      * Check if a property is set.

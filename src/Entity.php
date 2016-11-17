@@ -1,5 +1,6 @@
 <?php namespace Maer\Entity;
 
+use Closure;
 use JsonSerializable;
 
 abstract class Entity implements JsonSerializable
@@ -192,11 +193,12 @@ abstract class Entity implements JsonSerializable
     /**
      * Convert array to entities
      *
-     * @param  array    $data
-     * @param  string   $index Set the value in this key as index
+     * @param  array   $data
+     * @param  string  $index Set the value in this key as index
+     * @param  Closure $callback Executed before the entity gets populated
      * @return Entity|array
      */
-    public static function make($data = null, $index = null)
+    public static function make($data = null, $index = null, Closure $callback = null)
     {
         if (!is_array($data)) {
             return null;
@@ -216,27 +218,32 @@ abstract class Entity implements JsonSerializable
             foreach($data as $item) {
                 if ($index && array_key_exists($index, $item)) {
                     $key = $item[$index];
-                    $list[$key] = static::populate($item);
+                    $list[$key] = static::populate($item, $callback);
                     continue;
                 }
-                $list[] = static::populate($item);
+                $list[] = static::populate($item, $callback);
             }
 
             return $list;
         }
 
-        return static::populate($data);
+        return static::populate($data, $callback);
     }
 
 
     /**
      * Populate the entity
      *
-     * @param  array  $data
+     * @param  array   $data
+     * @param  Closure $callback Executed before the entity get's populated
      * @return Static
      */
-    protected static function populate(array $data)
+    protected static function populate(array $data, Closure $callback = null)
     {
+        if (!is_null($callback)) {
+            $data = call_user_func_array($callback, [$data]);
+        }
+
         return new static($data);
     }
 

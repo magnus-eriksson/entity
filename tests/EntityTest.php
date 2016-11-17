@@ -327,6 +327,33 @@ class EntityTest extends PHPUnit_Framework_TestCase
 
 
     /**
+    * @convers ::make
+    */
+    public function testPopulateCallback()
+    {
+        $entity = TestEntity::make($this->data, null, function ($data) {
+            $data['string'] = "I'm changed";
+            return $data;
+        });
+
+        $this->assertEquals(
+            $entity->string,
+            "I'm changed"
+        );
+
+        $entities = TestEntity::make([$this->data, $this->data], null, function ($data) {
+            $data['string'] = "I'm changed";
+            return $data;
+        });
+
+        $this->assertEquals(
+            $entities[0]->string,
+            "I'm changed"
+        );
+    }
+
+
+    /**
      * @expectedException Maer\Entity\UnknownPropertyException
      */
     public function testGetException()

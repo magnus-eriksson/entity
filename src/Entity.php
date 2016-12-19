@@ -37,9 +37,17 @@ abstract class Entity implements JsonSerializable
      *
      * @param array     $data
      */
-    public function __construct(array $data = [])
+    public function __construct(array $data = [], Closure $modifier = null)
     {
         $this->_ignoreExisting = true;
+
+        // Run the before modifier
+        $data = $this->__before($data);
+
+        if (!is_null($modifier)) {
+            $data = call_user_func_array($modifier, [$data]);
+        }
+
         foreach($data as $key => $value) {
 
             if (array_key_exists($key, $this->_map)) {
@@ -191,14 +199,26 @@ abstract class Entity implements JsonSerializable
 
 
     /**
+     * Modify the values before set
+     *
+     * @param  array  $params
+     * @return array
+     */
+    protected function __before(array $params)
+    {
+        return $params;
+    }
+
+
+    /**
      * Convert array to entities
      *
      * @param  array   $data
      * @param  string  $index Set the value in this key as index
-     * @param  Closure $callback Executed before the entity gets populated
+     * @param  Closure $modifier Executed before the entity gets populated
      * @return Entity|array
      */
-    public static function make($data = null, $index = null, Closure $callback = null)
+    public static function make($data = null, $index = null, Closure $modifier = null)
     {
         if (!is_array($data)) {
             return null;
@@ -218,16 +238,16 @@ abstract class Entity implements JsonSerializable
             foreach($data as $item) {
                 if ($index && array_key_exists($index, $item)) {
                     $key = $item[$index];
-                    $list[$key] = static::populate($item, $callback);
+                    $list[$key] = static::populate($item, $modifier);
                     continue;
                 }
-                $list[] = static::populate($item, $callback);
+                $list[] = static::populate($item, $modifier);
             }
 
             return $list;
         }
 
-        return static::populate($data, $callback);
+        return static::populate($data, $modifier);
     }
 
 
@@ -235,16 +255,12 @@ abstract class Entity implements JsonSerializable
      * Populate the entity
      *
      * @param  array   $data
-     * @param  Closure $callback Executed before the entity get's populated
+     * @param  Closure $modifier Executed before the entity get's populated
      * @return Static
      */
-    protected static function populate(array $data, Closure $callback = null)
+    protected static function populate(array $data, Closure $modifier = null)
     {
-        if (!is_null($callback)) {
-            $data = call_user_func_array($callback, [$data]);
-        }
-
-        return new static($data);
+        return new static($data, $modifier);
     }
 
 }

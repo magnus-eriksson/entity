@@ -25,6 +25,7 @@ $ composer require maer/entity 1.*
     - [Create a default entity](#create-a-default-entity)
     - [Convert an array to entity](#convert-an-array-to-entity)
     - [Convert a multidimensional array to a list of entities](#convert-a-multidimensional-array-to-a-list-of-entities)
+    - [Modify values on instantiation](#Modify values on instantiation)
 - [**Helper methods**](#helper-methods)
     - [Check if a property exists](#check-if-a-property-exists)
     - [Get a property formatted as date](#get-a-property-formatted-as-date)
@@ -128,7 +129,7 @@ echo $hero->id;
 The static `Entity::make()` method is a bit more clever and can do more than just give you one entity. If you pass a multidimensional array, it will give you an array with entities back:
 
 ```php
-$dataSet = [
+$dataset = [
     [
         'id'   => 1337,
         'name' => 'Chuck Norris',
@@ -139,7 +140,7 @@ $dataSet = [
     ],
 ];
 
-$heroes = Hero::make($dataSet);
+$heroes = Hero::make($dataset);
 
 echo $heroes[0]->id;
 // Returns: 1337
@@ -148,12 +149,106 @@ echo $heroes[0]->id;
 You can also define what property should be used as the array key, making it an associated array.
 
 ```php
-$heroes = Hero::make($dataSet, 'id');
+$heroes = Hero::make($dataset, 'id');
 
 echo $heroes[1337]->name;
 // Returns: "Chuck Norris"
 
 ```
+
+### Modify values on instantiation
+
+Sometimes you get a list of values which needs to be modified before you create the entity. In this example, we will show an example of how we can prepend `http://` in front of an URL, in case it is missing:
+
+Propose that we have an entity and dataset looking like this:
+
+```php
+class Website extends Maer\Entity\Entity
+{
+    protected $_params = [
+        'title' => null,
+        'url'   => null,
+    ];
+}
+
+$dataset = [
+    'title'   => 'Google',
+    'url'     => 'www.google.com',
+];
+
+$website = new Website($dataset);
+
+echo $website->url;
+// Returns: "www.google.com"
+```
+
+Sure, we could add `http://` before we instantiate the entity, but that would require us to repeat it where ever we instantiate the entity. It would also mean that we would need to manually iterate through the dataset, if it is a list of websites.
+
+#### Modifier on instantiation
+
+Luckily, we can send in a modifier in form of a closure upon entity creation:
+
+```php
+$website = new Website($dataset, function ($params) {
+    if (isset($params['url]) && strpos($params['url'], 'http://') !== 0) {
+        // We got a parameter called url that doesn't start with http://
+        $params['url'] = 'http://' . $params['url'];
+    }
+
+    // Return the modified values
+    return $params;
+});
+```
+
+You can do the same using the static `Entity::make()` method:
+```php
+$website = Website::make($dataset, null, function ($params) {
+    // ... Modifie the values like the above example
+    // Return the modified values
+    return $params;
+});
+```
+
+#### Global modifier
+
+The above method helps out if you need to modify the input on a specific instance, or list of instances, but it still requires you to add the modifier when you create an instance. To make the above modifier global and automatically triggered upon instantiation, without needing to manually add it everywhere, you can use the `__before()` method on you entity object:
+
+```php
+class Website extends Maer\Entity\Entity
+{
+    protected $_params = [
+        'title' => null,
+        'url'   => null,
+    ];
+
+    protected function __before(array $params)
+    {
+        if (isset($params['url]) && strpos($params['url'], 'http://') !== 0) {
+            // We got a parameter called url that doesn't start with http://
+            $params['url'] = 'http://' . $params['url'];
+        }
+
+        // Return the modified values
+        return $params;
+    }
+
+}
+
+$dataset = [
+    'title'   => 'Google',
+    'url'     => 'www.google.com',
+];
+
+$website = new Website($dataset);
+// Or
+$website = Website::($dataset);
+
+echo $website->url;
+// Returns: "http://www.google.com"
+```
+
+**Note:** If you have a global `__before()` method and still send in a modifier upon instantiation, the global modifier will be called first and your instance-specific modifier last.
+
 
 ## Helper methods
 

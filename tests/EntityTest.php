@@ -1,5 +1,8 @@
 <?php
-require __DIR__ . '/TestEntity.php';
+if (!class_exists('TestEntity')) {
+    require __DIR__ . '/TestEntity.php';
+}
+
 
 use Maer\Entity\Entity;
 
@@ -322,33 +325,6 @@ class EntityTest extends PHPUnit_Framework_TestCase
         $this->assertFalse(
             $this->entity->has('invalid'),
             "has non existing property"
-        );
-    }
-
-
-    /**
-    * @convers ::make
-    */
-    public function testPopulateCallback()
-    {
-        $entity = TestEntity::make($this->data, null, function ($data) {
-            $data['string'] = "I'm changed";
-            return $data;
-        });
-
-        $this->assertEquals(
-            $entity->string,
-            "I'm changed"
-        );
-
-        $entities = TestEntity::make([$this->data, $this->data], null, function ($data) {
-            $data['string'] = "I'm changed";
-            return $data;
-        });
-
-        $this->assertEquals(
-            $entities[0]->string,
-            "I'm changed"
         );
     }
 

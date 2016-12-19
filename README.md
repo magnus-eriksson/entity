@@ -211,7 +211,7 @@ $website = Website::make($dataset, null, function ($params) {
 
 #### Global modifier
 
-The above method helps out if you need to modify the input on a specific instance, or list of instances, but it still requires you to add the modifier when you create an instance. To make the above modifier global and automatically triggered upon instantiation, without needing to manually add it everywhere, you can use the `__before()` method on you entity object:
+Using a closure works well if you want to add a modifier for some specific instances. If you want to use your modifier for every instance, where ever it's used, you can use the `Entity::__before()`-method instead:
 
 ```php
 class Website extends Maer\Entity\Entity
@@ -241,7 +241,7 @@ $dataset = [
 
 $website = new Website($dataset);
 // Or
-$website = Website::($dataset);
+$website = Website::make($dataset);
 
 echo $website->url;
 // Returns: "http://www.google.com"

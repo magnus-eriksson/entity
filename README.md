@@ -25,7 +25,7 @@ $ composer require maer/entity 1.*
     - [Create a default entity](#create-a-default-entity)
     - [Convert an array to entity](#convert-an-array-to-entity)
     - [Convert a multidimensional array to a list of entities](#convert-a-multidimensional-array-to-a-list-of-entities)
-    - [Modify values on instantiation](#Modify values on instantiation)
+    - [Modify values on instantiation](#modify-values-on-instantiation)
 - [**Helper methods**](#helper-methods)
     - [Check if a property exists](#check-if-a-property-exists)
     - [Get a property formatted as date](#get-a-property-formatted-as-date)

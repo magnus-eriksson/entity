@@ -20,6 +20,8 @@ class TestEntity extends Maer\Entity\Entity
         'pub'         => null,
         'null_value'  => null,
         'mapped'      => null,
+        'dotted'      => null,
+        'rev_dotted'  => null,
     ];
 
     protected $_protect = [
@@ -27,6 +29,6 @@ class TestEntity extends Maer\Entity\Entity
     ];
 
     protected $_map = [
-        'map' => 'mapped'
+        'map'           => 'mapped',
     ];
 }

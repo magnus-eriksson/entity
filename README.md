@@ -21,6 +21,8 @@ $ composer require maer/entity 1.*
 - [**Define an entity**](#define-an-entity)
     - [Default property values and types](#default-property-values-and-types)
     - [Protect properties](#protect-properties)
+    - [Remap properties](#remap-properties)
+    - [Remap nested properties](#remap-nested-properties)
 - [**Instantiate an entity**](#instantiate-an-entity)
     - [Create a default entity](#create-a-default-entity)
     - [Convert an array to entity](#convert-an-array-to-entity)
@@ -81,6 +83,44 @@ class User extends Maer\Entity\Enity
     ];
 }
 ```
+
+### Remap properties
+
+Sometimes the source array might have different key names than the defined entity params. To make it as easy as possible for you, you can map param names and your entity will automatically remap them upon instantiation.
+
+```php
+class User extends Maer\Entity\Enity
+{
+    protected $_params = [
+        'username'     => '',
+    ];
+
+    // Assign the map as ['sourceName' => 'entityParamName']
+    protected $_map = [
+        'email => 'username',
+    ];
+}
+```
+If you now send in an array with a `email` key, the value will be mapped as `username` instead.
+
+### Remap nested properties
+
+If you want to map a value in a multidimensional array, you can do just as above, but using dot notation as map key.
+
+```php
+class User extends Maer\Entity\Enity
+{
+    protected $_params = [
+        'username'     => '',
+    ];
+
+    protected $_map = [
+        'user.username => 'username',
+    ];
+}
+```
+This will map `['user' => ['username' => 'Chuck Norris']]` as just `username`. There is no limit on how many nested levels you can go.
+
 
 ## Instantiate an entity
 

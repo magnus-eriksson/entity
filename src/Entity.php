@@ -31,6 +31,12 @@ abstract class Entity implements JsonSerializable
      */
     protected $_ignoreExisting = false;
 
+    /**
+     * Setup
+     * @var array
+     */
+    protected $_setup = [];
+
 
     /**
      * Create new instance
@@ -48,15 +54,25 @@ abstract class Entity implements JsonSerializable
             $data = call_user_func_array($modifier, [$data]);
         }
 
-        foreach($data as $key => $value) {
+        foreach($this->_params as $key => $value) {
+            $invertMap = $this->arrayGet($this->_setup, 'invert_map', false);
+            $searchKey = $key;
 
-            if (array_key_exists($key, $this->_map)) {
-                $this->{$this->_map[$key]} = $value;
-            } else {
-                $this->{$key} = $value;
+            if (!$invertMap && $index = array_search($key, $this->_map)) {
+                $key       = $this->_map[$index];
+                $searchKey = $index;
             }
 
+            if ($invertMap && array_key_exists($key, $this->_map)) {
+                $searchKey = $this->_map[$key];
+            }
+
+            if ($this->arrayHasKey($data, $searchKey)) {
+                $this->setParam($key, $this->arrayGet($data, $searchKey));
+                continue;
+            }
         }
+
         $this->_ignoreExisting = false;
     }
 
@@ -126,6 +142,7 @@ abstract class Entity implements JsonSerializable
         }
     }
 
+
     /**
      * Check if a property is set.
      */
@@ -160,9 +177,11 @@ abstract class Entity implements JsonSerializable
 
         if ($protect) {
             $new = $this->_params;
+
             foreach($protect as $key) {
                 unset($new[$key]);
             }
+
             return $new;
         }
 
@@ -261,6 +280,65 @@ abstract class Entity implements JsonSerializable
     protected static function populate(array $data, Closure $modifier = null)
     {
         return new static($data, $modifier);
+    }
+
+
+    /**
+     * Get a key value, using dot notation
+     *
+     * @param  array  &$array
+     * @param  string $key
+     * @param  mixed  $default
+     * @return mixed
+     */
+    protected function arrayGet(&$source, $key, $default = null)
+    {
+        if (!$key) {
+            return $default;
+        }
+
+        if (array_key_exists($key, $source)) {
+            return $source[$key];
+        }
+
+        $current  =& $source;
+        foreach(explode('.', $key) as $segment) {
+            if (!array_key_exists($segment, $current)) {
+                return $default;
+            }
+            $current =& $current[$segment];
+        }
+
+        return $current;
+    }
+
+
+    /**
+     * Check if a key exists, using dot notation
+     *
+     * @param  array  &$array
+     * @param  string $key
+     * @return boolean
+     */
+    protected function arrayHasKey(&$source, $key)
+    {
+        if (!$key) {
+            return false;
+        }
+
+        if (array_key_exists($key, $source)) {
+            return true;
+        }
+
+        $current  =& $source;
+        foreach(explode('.', $key) as $segment) {
+            if (!array_key_exists($segment, $current)) {
+                return false;
+            }
+            $current =& $current[$segment];
+        }
+
+        return true;
     }
 
 }

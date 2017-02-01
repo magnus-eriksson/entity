@@ -1,9 +1,4 @@
 <?php
-if (!class_exists('TestEntity')) {
-    require __DIR__ . '/TestEntity.php';
-}
-
-
 use Maer\Entity\Entity;
 
 /**
@@ -31,6 +26,9 @@ class EntityTest extends PHPUnit_Framework_TestCase
         'protect'     => "I'm protected",
         'map'         => "success",
         'not_saved'   => "This won't be saved",
+        'level1'      => [
+            'level2'    => 'foo'
+        ],
     ];
 
 

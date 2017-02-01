@@ -1,9 +1,4 @@
 <?php
-if (!class_exists('TestEntity')) {
-    require __DIR__ . '/TestEntity.php';
-    require __DIR__ . '/TestEntityBefore.php';
-}
-
 use Maer\Entity\Entity;
 
 /**

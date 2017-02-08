@@ -182,10 +182,12 @@ abstract class Entity implements JsonSerializable
                 unset($new[$key]);
             }
 
-            return $new;
+            // Do json encode and decode to convert all levels to arrays
+            return json_decode(json_encode($new), true, 512);
         }
 
-        return $this->_params;
+        // Do json encode and decode to convert all levels to arrays
+        return json_decode(json_encode($this->_params, true, 512));
     }
 
 

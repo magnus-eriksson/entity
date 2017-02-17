@@ -187,7 +187,7 @@ abstract class Entity implements JsonSerializable
         }
 
         // Do json encode and decode to convert all levels to arrays
-        return json_decode(json_encode($this->_params, true, 512));
+        return json_decode(json_encode($this->_params), true, 512);
     }
 
 

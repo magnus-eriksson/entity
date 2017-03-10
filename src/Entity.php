@@ -2,6 +2,7 @@
 
 use Closure;
 use JsonSerializable;
+use Traversable;
 
 abstract class Entity implements JsonSerializable
 {
@@ -41,10 +42,23 @@ abstract class Entity implements JsonSerializable
     /**
      * Create new instance
      *
-     * @param array     $data
+     * @param array|Traversable     $data
      */
-    public function __construct(array $data = [], Closure $modifier = null)
+    public function __construct($data = [], Closure $modifier = null)
     {
+        if ($data instanceof Traversable) {
+            $data = iterator_to_array($data);
+        }
+
+        if (is_object($data)) {
+            $data = (array) $data;
+        }
+
+        if (!is_array($data)) {
+            throw new \Exception('Only arrays or objects implementing the Traversable interface allowed');
+        }
+
+
         $this->_ignoreExisting = true;
 
         // Run the before modifier
@@ -241,6 +255,10 @@ abstract class Entity implements JsonSerializable
      */
     public static function make($data = null, $index = null, Closure $modifier = null)
     {
+        if ($data instanceof Traversable) {
+            $data = iterator_to_array($data);
+        }
+
         if (!is_array($data)) {
             return null;
         }
@@ -342,5 +360,4 @@ abstract class Entity implements JsonSerializable
 
         return true;
     }
-
 }

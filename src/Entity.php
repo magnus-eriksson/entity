@@ -1,6 +1,7 @@
 <?php namespace Maer\Entity;
 
 use Closure;
+use InvalidArgumentException;
 use JsonSerializable;
 use Traversable;
 
@@ -11,7 +12,7 @@ abstract class Entity implements JsonSerializable
      *
      * @var array
      */
-    protected $_params  = [];
+    protected $_params = [];
 
     /**
      * Removed on json serialization
@@ -25,7 +26,7 @@ abstract class Entity implements JsonSerializable
      *
      * @var array
      */
-    protected $_map     = [];
+    protected $_map = [];
 
     /**
      * @var boolean
@@ -43,6 +44,8 @@ abstract class Entity implements JsonSerializable
      * Create new instance
      *
      * @param array|Traversable     $data
+     *
+     * @throws InvalidArgumentException if the passed value isn't an array or implements Traversable
      */
     public function __construct($data = [], Closure $modifier = null)
     {
@@ -55,9 +58,12 @@ abstract class Entity implements JsonSerializable
         }
 
         if (!is_array($data)) {
-            throw new \Exception('Only arrays or objects implementing the Traversable interface allowed');
-        }
+            if ($this->arrayGet($this->_setup, 'suppress_errors') === true) {
+                return;
+            }
 
+            throw new InvalidArgumentException('Only arrays or objects implementing the Traversable interface allowed');
+        }
 
         $this->_ignoreExisting = true;
 
@@ -99,6 +105,10 @@ abstract class Entity implements JsonSerializable
     public function __get($key)
     {
         if (!array_key_exists($key, $this->_params)) {
+            if ($this->arrayGet($this->_setup, 'suppress_errors') === true) {
+                return null;
+            }
+
             throw new UnknownPropertyException("Unknown property: '{$key}'");
         }
 
@@ -129,7 +139,7 @@ abstract class Entity implements JsonSerializable
     protected function setParam($key, $value)
     {
         if (!array_key_exists($key, $this->_params)) {
-            if ($this->_ignoreExisting) {
+            if ($this->_ignoreExisting || $this->arrayGet($this->_setup, 'suppress_errors') === true) {
                 return;
             }
 

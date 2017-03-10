@@ -28,6 +28,7 @@ $ composer require maer/entity 1.*
     - [Convert an array to entity](#convert-an-array-to-entity)
     - [Convert a multidimensional array to a list of entities](#convert-a-multidimensional-array-to-a-list-of-entities)
     - [Modify values on instantiation](#modify-values-on-instantiation)
+    - [Change the behavior with the $_setup property](#change-the-behavior-with-the-$_setup-property)
 - [**Helper methods**](#helper-methods)
     - [Check if a property exists](#check-if-a-property-exists)
     - [Get a property formatted as date](#get-a-property-formatted-as-date)
@@ -97,11 +98,12 @@ class User extends Maer\Entity\Enity
 
     // Assign the map as ['sourceName' => 'entityParamName']
     protected $_map = [
-        'email => 'username',
+        'email     => 'username',
     ];
 }
 ```
 If you now send in an array with a `email` key, the value will be mapped as `username` instead.
+
 
 ### Remap nested properties
 
@@ -120,6 +122,8 @@ class User extends Maer\Entity\Enity
 }
 ```
 This will map `['user' => ['username' => 'Chuck Norris']]` as just `username`. There is no limit on how many nested levels you can go.
+
+If you have a lot of nested values you want to remap, you might want to invert the `map` values for readability like: `'new_key' => 'some.deep.nested.value`. You can do this by setting the `invert_map`setup to `true`. [Read more about the `$_setup` param here]((#change-the-behavior-with-the-$_setup-property).
 
 
 ## Instantiate an entity
@@ -288,6 +292,29 @@ echo $website->url;
 ```
 
 **Note:** If you have a global `__before()` method and still send in a modifier upon instantiation, the global modifier will be called first and your instance-specific modifier last.
+
+#### Change the behavior with the $_setup property
+
+There is a `Entity::$_setup` property which can help you modify some of the default behavior.
+
+
+| Property         | Type    | Default      | Behavior                                   |
+|------------------|---------|-----------------------------------------------------------|
+| suppress_errors  | boolean | `false`      | When true, it doesn't throw any exceptions |
+| invert_map       | boolean | `false`      | When true, swap position for `from_key` and `to_key` for the `$_map` property |
+
+
+**Usage**
+```
+class MyEntity
+{
+    protected $_setup = [
+        'suppress_errors' => true,
+        'invert_map'      => true,
+    ];
+}
+
+```
 
 
 ## Helper methods

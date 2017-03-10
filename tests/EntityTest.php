@@ -328,6 +328,17 @@ class EntityTest extends PHPUnit_Framework_TestCase
 
 
     /**
+    * @convers ::$_setup suppress_errors true
+    */
+    public function testSuppressErrors()
+    {
+        $entity = new SuppressEntity();
+
+        $this->assertNull($entity->nonExisting);
+    }
+
+
+    /**
      * @expectedException Maer\Entity\UnknownPropertyException
      */
     public function testGetException()
@@ -342,5 +353,13 @@ class EntityTest extends PHPUnit_Framework_TestCase
     public function testSetException()
     {
         $this->entity->nonExistinProperty = "something";
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidArgumentException()
+    {
+        new TestEntity('invalid type');
     }
 }

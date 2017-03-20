@@ -235,6 +235,16 @@ class EntityTest extends PHPUnit_Framework_TestCase
             $this->entity->mapped,
             "Check mapped 'mapped'"
         );
+
+        $entity = TestEntity::make([
+            'mapped' => 'hello',
+        ]);
+
+        $this->assertEquals(
+            'hello',
+            $entity->mapped,
+            "Check mapped 'mapped' default"
+        );
     }
 
 

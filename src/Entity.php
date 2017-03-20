@@ -75,20 +75,22 @@ abstract class Entity implements JsonSerializable
         }
 
         foreach($this->_params as $key => $value) {
-            $invertMap = $this->arrayGet($this->_setup, 'invert_map', false);
-            $searchKey = $key;
+            if ($this->arrayHasKey($data, $key)) {
+                $this->setParam($key, $this->arrayGet($data, $key));
+                continue;
+            }
+        }
 
-            if (!$invertMap && $index = array_search($key, $this->_map)) {
-                $key       = $this->_map[$index];
-                $searchKey = $index;
+        // Overwrite with the mapped values
+        $invertMap = $this->arrayGet($this->_setup, 'invert_map', false);
+        foreach($this->_map as $key1 => $key2) {
+            if (!$invertMap && $this->arrayHasKey($data, $key1)) {
+                $this->setParam($key2, $this->arrayGet($data, $key1));
+                continue;
             }
 
-            if ($invertMap && array_key_exists($key, $this->_map)) {
-                $searchKey = $this->_map[$key];
-            }
-
-            if ($this->arrayHasKey($data, $searchKey)) {
-                $this->setParam($key, $this->arrayGet($data, $searchKey));
+            if ($invertMap && $this->arrayHasKey($data, $key2)) {
+                $this->setParam($key1, $this->arrayGet($data, $key2));
                 continue;
             }
         }

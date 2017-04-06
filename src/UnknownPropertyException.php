@@ -2,5 +2,4 @@
 
 class UnknownPropertyException extends \Exception
 {
-
 }

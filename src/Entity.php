@@ -1,7 +1,9 @@
 <?php namespace Maer\Entity;
 
 use Closure;
+use InvalidArgumentException;
 use JsonSerializable;
+use Traversable;
 
 abstract class Entity implements JsonSerializable
 {
@@ -10,7 +12,7 @@ abstract class Entity implements JsonSerializable
      *
      * @var array
      */
-    protected $_params  = [];
+    protected $_params = [];
 
     /**
      * Removed on json serialization
@@ -24,21 +26,45 @@ abstract class Entity implements JsonSerializable
      *
      * @var array
      */
-    protected $_map     = [];
+    protected $_map = [];
 
     /**
      * @var boolean
      */
     protected $_ignoreExisting = false;
 
+    /**
+     * Setup
+     * @var array
+     */
+    protected $_setup = [];
+
 
     /**
      * Create new instance
      *
-     * @param array     $data
+     * @param array|Traversable     $data
+     *
+     * @throws InvalidArgumentException if the passed value isn't an array or implements Traversable
      */
-    public function __construct(array $data = [], Closure $modifier = null)
+    public function __construct($data = [], Closure $modifier = null)
     {
+        if ($data instanceof Traversable) {
+            $data = iterator_to_array($data);
+        }
+
+        if (is_object($data)) {
+            $data = (array) $data;
+        }
+
+        if (!is_array($data)) {
+            if ($this->arrayGet($this->_setup, 'suppress_errors') === true) {
+                return;
+            }
+
+            throw new InvalidArgumentException('Only arrays or objects implementing the Traversable interface allowed');
+        }
+
         $this->_ignoreExisting = true;
 
         // Run the before modifier
@@ -48,15 +74,27 @@ abstract class Entity implements JsonSerializable
             $data = call_user_func_array($modifier, [$data]);
         }
 
-        foreach($data as $key => $value) {
+        foreach($this->_params as $key => $value) {
+            if ($this->arrayHasKey($data, $key)) {
+                $this->setParam($key, $this->arrayGet($data, $key));
+                continue;
+            }
+        }
 
-            if (array_key_exists($key, $this->_map)) {
-                $this->{$this->_map[$key]} = $value;
-            } else {
-                $this->{$key} = $value;
+        // Overwrite with the mapped values
+        $invertMap = $this->arrayGet($this->_setup, 'invert_map', false);
+        foreach($this->_map as $key1 => $key2) {
+            if (!$invertMap && $this->arrayHasKey($data, $key1)) {
+                $this->setParam($key2, $this->arrayGet($data, $key1));
+                continue;
             }
 
+            if ($invertMap && $this->arrayHasKey($data, $key2)) {
+                $this->setParam($key1, $this->arrayGet($data, $key2));
+                continue;
+            }
         }
+
         $this->_ignoreExisting = false;
     }
 
@@ -69,6 +107,10 @@ abstract class Entity implements JsonSerializable
     public function __get($key)
     {
         if (!array_key_exists($key, $this->_params)) {
+            if ($this->arrayGet($this->_setup, 'suppress_errors') === true) {
+                return null;
+            }
+
             throw new UnknownPropertyException("Unknown property: '{$key}'");
         }
 
@@ -99,7 +141,7 @@ abstract class Entity implements JsonSerializable
     protected function setParam($key, $value)
     {
         if (!array_key_exists($key, $this->_params)) {
-            if ($this->_ignoreExisting) {
+            if ($this->_ignoreExisting || $this->arrayGet($this->_setup, 'suppress_errors') === true) {
                 return;
             }
 
@@ -125,6 +167,7 @@ abstract class Entity implements JsonSerializable
                 break;
         }
     }
+
 
     /**
      * Check if a property is set.
@@ -160,13 +203,17 @@ abstract class Entity implements JsonSerializable
 
         if ($protect) {
             $new = $this->_params;
+
             foreach($protect as $key) {
                 unset($new[$key]);
             }
-            return $new;
+
+            // Do json encode and decode to convert all levels to arrays
+            return json_decode(json_encode($new), true, 512);
         }
 
-        return $this->_params;
+        // Do json encode and decode to convert all levels to arrays
+        return json_decode(json_encode($this->_params), true, 512);
     }
 
 
@@ -220,6 +267,10 @@ abstract class Entity implements JsonSerializable
      */
     public static function make($data = null, $index = null, Closure $modifier = null)
     {
+        if ($data instanceof Traversable) {
+            $data = iterator_to_array($data);
+        }
+
         if (!is_array($data)) {
             return null;
         }
@@ -263,4 +314,62 @@ abstract class Entity implements JsonSerializable
         return new static($data, $modifier);
     }
 
+
+    /**
+     * Get a key value, using dot notation
+     *
+     * @param  array  &$array
+     * @param  string $key
+     * @param  mixed  $default
+     * @return mixed
+     */
+    protected function arrayGet(&$source, $key, $default = null)
+    {
+        if (!$key) {
+            return $default;
+        }
+
+        if (array_key_exists($key, $source)) {
+            return $source[$key];
+        }
+
+        $current  =& $source;
+        foreach(explode('.', $key) as $segment) {
+            if (!array_key_exists($segment, $current)) {
+                return $default;
+            }
+            $current =& $current[$segment];
+        }
+
+        return $current;
+    }
+
+
+    /**
+     * Check if a key exists, using dot notation
+     *
+     * @param  array  &$array
+     * @param  string $key
+     * @return boolean
+     */
+    protected function arrayHasKey(&$source, $key)
+    {
+        if (!$key) {
+            return false;
+        }
+
+        if (array_key_exists($key, $source)) {
+            return true;
+        }
+
+        $current  =& $source;
+        foreach(explode('.', $key) as $segment) {
+            if (!array_key_exists($segment, $current)) {
+                return false;
+            }
+            $current =& $current[$segment];
+        }
+
+        return true;
+    }
 }

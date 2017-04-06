@@ -1,9 +1,4 @@
 <?php
-if (!class_exists('TestEntity')) {
-    require __DIR__ . '/TestEntity.php';
-}
-
-
 use Maer\Entity\Entity;
 
 /**
@@ -31,6 +26,9 @@ class EntityTest extends PHPUnit_Framework_TestCase
         'protect'     => "I'm protected",
         'map'         => "success",
         'not_saved'   => "This won't be saved",
+        'level1'      => [
+            'level2'    => 'foo'
+        ],
     ];
 
 
@@ -237,6 +235,16 @@ class EntityTest extends PHPUnit_Framework_TestCase
             $this->entity->mapped,
             "Check mapped 'mapped'"
         );
+
+        $entity = TestEntity::make([
+            'mapped' => 'hello',
+        ]);
+
+        $this->assertEquals(
+            'hello',
+            $entity->mapped,
+            "Check mapped 'mapped' default"
+        );
     }
 
 
@@ -330,6 +338,17 @@ class EntityTest extends PHPUnit_Framework_TestCase
 
 
     /**
+    * @convers ::$_setup suppress_errors true
+    */
+    public function testSuppressErrors()
+    {
+        $entity = new SuppressEntity();
+
+        $this->assertNull($entity->nonExisting);
+    }
+
+
+    /**
      * @expectedException Maer\Entity\UnknownPropertyException
      */
     public function testGetException()
@@ -344,5 +363,13 @@ class EntityTest extends PHPUnit_Framework_TestCase
     public function testSetException()
     {
         $this->entity->nonExistinProperty = "something";
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidArgumentException()
+    {
+        new TestEntity('invalid type');
     }
 }

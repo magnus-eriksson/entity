@@ -39,6 +39,11 @@ abstract class Entity implements JsonSerializable
      */
     protected $_setup = [];
 
+    /**
+     * Parameter data types
+     * @var array
+     */
+    protected $_types = [];
 
     /**
      * Create new instance
@@ -49,6 +54,8 @@ abstract class Entity implements JsonSerializable
      */
     public function __construct($data = [], Closure $modifier = null)
     {
+        $this->setDefaultDataTypes();
+
         if ($data instanceof Traversable) {
             $data = iterator_to_array($data);
         }
@@ -148,7 +155,7 @@ abstract class Entity implements JsonSerializable
             throw new UnknownPropertyException("Unknown property: '{$key}'");
         }
 
-        switch(gettype($this->_params[$key])) {
+        switch($this->_types[$key]) {
 
             case "boolean":
                 $this->_params[$key] = (bool) $value;
@@ -156,15 +163,48 @@ abstract class Entity implements JsonSerializable
             case "integer":
                 $this->_params[$key] = (integer) $value;
                 break;
-            case "double":
+            case "float":
                 $this->_params[$key] = (float) $value;
                 break;
             case "string":
                 $this->_params[$key] = (string) $value;
                 break;
+            case "array":
+                $this->_params[$key] = (array) $value;
+                break;
             default:
                 $this->_params[$key] = $value;
                 break;
+        }
+    }
+
+
+    /**
+     * Get the default data types
+     */
+    protected function setDefaultDataTypes()
+    {
+        foreach ($this->_params as $key => $value) {
+            switch(gettype($value)) {
+                case "boolean":
+                    $this->_types[$key] = 'boolean';
+                    break;
+                case "integer":
+                    $this->_types[$key] = 'integer';
+                    break;
+                case "double":
+                    $this->_types[$key] = 'float';
+                    break;
+                case "string":
+                    $this->_types[$key] = 'string';
+                    break;
+                case "array":
+                    $this->_types[$key] = 'array';
+                    break;
+                default:
+                    $this->_types[$key] = null;
+                    break;
+            }
         }
     }
 

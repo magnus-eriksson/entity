@@ -42,7 +42,7 @@ $ composer require maer/entity 1.*
 When defining an entity, you start create a new class which extends `Maer\Entity\Entity`:
 
 ```php
-class Hero extends Maer\Entity\Enity {}
+class Hero extends Maer\Entity\Entity {}
 ```
 
 ### Default property values and types
@@ -50,7 +50,7 @@ class Hero extends Maer\Entity\Enity {}
 Creating an empty entity isn't that exiting. We should define some properties and default values:
 
 ```php
-class Hero extends Maer\Entity\Enity
+class Hero extends Maer\Entity\Entity
 {
     protected $_params = [
         'id'        => 0,
@@ -70,7 +70,7 @@ When you define a default value, it's important that you define it with the corr
 If you want to be able to use a property in your code, but don't want to expose it in, say, an API response, you can "protect" it. An example would be a user entity having a password hash. To protect (remove) a property on JSON serialization or when fetching it as an array, you can protect it like this:
 
 ```php
-class User extends Maer\Entity\Enity
+class User extends Maer\Entity\Entity
 {
     protected $_params = [
         'id'           => 0,

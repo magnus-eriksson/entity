@@ -167,7 +167,6 @@ abstract class Entity implements JsonSerializable
         }
 
         switch ($this->_types[$key]) {
-
             case "boolean":
                 $this->_params[$key] = (bool)$value;
                 break;

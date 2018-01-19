@@ -35,12 +35,14 @@ abstract class Entity implements JsonSerializable
 
     /**
      * Setup
+     *
      * @var array
      */
     protected $_setup = [];
 
     /**
      * Parameter data types
+     *
      * @var array
      */
     protected $_types = [];
@@ -48,8 +50,10 @@ abstract class Entity implements JsonSerializable
     /**
      * Create new instance
      *
-     * @param array|Traversable     $data
+     * @param array|object|Traversable $data
+     * @param Closure|null             $modifier
      *
+     * @throws UnknownPropertyException
      * @throws InvalidArgumentException if the passed value isn't an array or implements Traversable
      */
     public function __construct($data = [], Closure $modifier = null)
@@ -61,7 +65,7 @@ abstract class Entity implements JsonSerializable
         }
 
         if (is_object($data)) {
-            $data = (array) $data;
+            $data = (array)$data;
         }
 
         if (!is_array($data)) {
@@ -81,7 +85,7 @@ abstract class Entity implements JsonSerializable
             $data = call_user_func_array($modifier, [$data]);
         }
 
-        foreach($this->_params as $key => $value) {
+        foreach ($this->_params as $key => $value) {
             if ($this->arrayHasKey($data, $key)) {
                 $this->setParam($key, $this->arrayGet($data, $key));
                 continue;
@@ -90,7 +94,7 @@ abstract class Entity implements JsonSerializable
 
         // Overwrite with the mapped values
         $invertMap = $this->arrayGet($this->_setup, 'invert_map', false);
-        foreach($this->_map as $key1 => $key2) {
+        foreach ($this->_map as $key1 => $key2) {
             if (!$invertMap && $this->arrayHasKey($data, $key1)) {
                 $this->setParam($key2, $this->arrayGet($data, $key1));
                 continue;
@@ -108,6 +112,10 @@ abstract class Entity implements JsonSerializable
 
     /**
      * Get a value from the parameter pool
+     *
+     * @param string $key
+     *
+     * @return mixed|null
      *
      * @throws UnknownPropertyException
      */
@@ -127,6 +135,9 @@ abstract class Entity implements JsonSerializable
 
     /**
      * Alias for ::setParam()
+     *
+     * @param string $key
+     * @param mixed  $value
      *
      * @throws UnknownPropertyException
      */
@@ -155,22 +166,22 @@ abstract class Entity implements JsonSerializable
             throw new UnknownPropertyException("Unknown property: '{$key}'");
         }
 
-        switch($this->_types[$key]) {
+        switch ($this->_types[$key]) {
 
             case "boolean":
-                $this->_params[$key] = (bool) $value;
+                $this->_params[$key] = (bool)$value;
                 break;
             case "integer":
-                $this->_params[$key] = (integer) $value;
+                $this->_params[$key] = (integer)$value;
                 break;
             case "float":
-                $this->_params[$key] = (float) $value;
+                $this->_params[$key] = (float)$value;
                 break;
             case "string":
-                $this->_params[$key] = (string) $value;
+                $this->_params[$key] = (string)$value;
                 break;
             case "array":
-                $this->_params[$key] = (array) $value;
+                $this->_params[$key] = (array)$value;
                 break;
             default:
                 $this->_params[$key] = $value;
@@ -185,7 +196,7 @@ abstract class Entity implements JsonSerializable
     protected function setDefaultDataTypes()
     {
         foreach ($this->_params as $key => $value) {
-            switch(gettype($value)) {
+            switch (gettype($value)) {
                 case "boolean":
                     $this->_types[$key] = 'boolean';
                     break;
@@ -211,6 +222,10 @@ abstract class Entity implements JsonSerializable
 
     /**
      * Check if a property is set.
+     *
+     * @param string $key
+     *
+     * @return bool
      */
     public function __isset($key)
     {
@@ -223,6 +238,10 @@ abstract class Entity implements JsonSerializable
      *
      * This is used since property_exists doesn't work to
      * check if a property exists in the $this->_params array
+     *
+     * @param string $key
+     *
+     * @return bool
      */
     public function has($key)
     {
@@ -233,7 +252,9 @@ abstract class Entity implements JsonSerializable
     /**
      * Return the params as array and remove the protected keys
      *
-     * @return json
+     * @param array|null $protect
+     *
+     * @return array
      */
     public function toArray($protect = null)
     {
@@ -244,7 +265,8 @@ abstract class Entity implements JsonSerializable
         if ($protect) {
             $new = $this->_params;
 
-            foreach($protect as $key) {
+
+            foreach ($protect as $key) {
                 unset($new[$key]);
             }
 
@@ -260,7 +282,7 @@ abstract class Entity implements JsonSerializable
     /**
      * Return the params as json and remove the protected keys
      *
-     * @return json
+     * @return array from json data
      */
     public function jsonSerialize()
     {
@@ -271,8 +293,9 @@ abstract class Entity implements JsonSerializable
     /**
      * Return a parameter as a formatted date string
      *
-     * @param  string   $key
-     * @param  string   $format
+     * @param  string $key
+     * @param  string $format
+     *
      * @return string
      */
     public function date($key, $format = "F j, Y")
@@ -288,7 +311,8 @@ abstract class Entity implements JsonSerializable
     /**
      * Modify the values before set
      *
-     * @param  array  $params
+     * @param  array $params
+     *
      * @return array
      */
     protected function __before(array $params)
@@ -301,8 +325,9 @@ abstract class Entity implements JsonSerializable
      * Convert array to entities
      *
      * @param  array   $data
-     * @param  string  $index Set the value in this key as index
+     * @param  string  $index    Set the value in this key as index
      * @param  Closure $modifier Executed before the entity gets populated
+     *
      * @return Entity|array
      */
     public static function make($data = null, $index = null, Closure $modifier = null)
@@ -326,9 +351,9 @@ abstract class Entity implements JsonSerializable
 
         if ($multi) {
             $list = [];
-            foreach($data as $item) {
+            foreach ($data as $item) {
                 if ($index && array_key_exists($index, $item)) {
-                    $key = $item[$index];
+                    $key        = $item[$index];
                     $list[$key] = static::populate($item, $modifier);
                     continue;
                 }
@@ -347,7 +372,8 @@ abstract class Entity implements JsonSerializable
      *
      * @param  array   $data
      * @param  Closure $modifier Executed before the entity get's populated
-     * @return Static
+     *
+     * @return Entity
      */
     protected static function populate(array $data, Closure $modifier = null)
     {
@@ -358,9 +384,10 @@ abstract class Entity implements JsonSerializable
     /**
      * Get a key value, using dot notation
      *
-     * @param  array  &$array
+     * @param  array  &$source
      * @param  string $key
      * @param  mixed  $default
+     *
      * @return mixed
      */
     protected function arrayGet(&$source, $key, $default = null)
@@ -373,8 +400,8 @@ abstract class Entity implements JsonSerializable
             return $source[$key];
         }
 
-        $current  =& $source;
-        foreach(explode('.', $key) as $segment) {
+        $current =& $source;
+        foreach (explode('.', $key) as $segment) {
             if (!array_key_exists($segment, $current)) {
                 return $default;
             }
@@ -388,8 +415,9 @@ abstract class Entity implements JsonSerializable
     /**
      * Check if a key exists, using dot notation
      *
-     * @param  array  &$array
+     * @param  array  &$source
      * @param  string $key
+     *
      * @return boolean
      */
     protected function arrayHasKey(&$source, $key)
@@ -402,8 +430,8 @@ abstract class Entity implements JsonSerializable
             return true;
         }
 
-        $current  =& $source;
-        foreach(explode('.', $key) as $segment) {
+        $current =& $source;
+        foreach (explode('.', $key) as $segment) {
             if (!array_key_exists($segment, $current)) {
                 return false;
             }

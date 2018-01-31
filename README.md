@@ -98,7 +98,7 @@ class User extends Maer\Entity\Enity
 
     // Assign the map as ['sourceName' => 'entityParamName']
     protected $_map = [
-        'email     => 'username',
+        'email'     => 'username',
     ];
 }
 ```
@@ -117,7 +117,7 @@ class User extends Maer\Entity\Enity
     ];
 
     protected $_map = [
-        'user.username => 'username',
+        'user.username' => 'username',
     ];
 }
 ```
@@ -234,7 +234,7 @@ Luckily, we can send in a modifier in form of a closure upon entity creation:
 
 ```php
 $website = new Website($dataset, function ($params) {
-    if (isset($params['url]) && strpos($params['url'], 'http://') !== 0) {
+    if (isset($params['url']) && strpos($params['url'], 'http://') !== 0) {
         // We got a parameter called url that doesn't start with http://
         $params['url'] = 'http://' . $params['url'];
     }
@@ -267,7 +267,7 @@ class Website extends Maer\Entity\Entity
 
     protected function __before(array $params)
     {
-        if (isset($params['url]) && strpos($params['url'], 'http://') !== 0) {
+        if (isset($params['url']) && strpos($params['url'], 'http://') !== 0) {
             // We got a parameter called url that doesn't start with http://
             $params['url'] = 'http://' . $params['url'];
         }

@@ -190,7 +190,7 @@ echo $heroes[0]->id;
 // Returns: 1337
 ```
 
-You can also define what property should be used as the array key, making it an associated array.
+You can also define what property should be used as the array key, making it an associative array.
 
 ```php
 $heroes = Hero::make($dataset, 'id');

@@ -98,7 +98,7 @@ class User extends Maer\Entity\Enity
 
     // Assign the map as ['sourceName' => 'entityParamName']
     protected $_map = [
-        'email     => 'username',
+        'email'     => 'username',
     ];
 }
 ```
@@ -117,7 +117,7 @@ class User extends Maer\Entity\Enity
     ];
 
     protected $_map = [
-        'user.username => 'username',
+        'user.username' => 'username',
     ];
 }
 ```

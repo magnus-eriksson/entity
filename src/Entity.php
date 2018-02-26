@@ -421,7 +421,7 @@ abstract class Entity implements JsonSerializable
      */
     protected function arrayHasKey(&$source, $key)
     {
-        if (!$key) {
+        if (!$key || !is_array($source)) {
             return false;
         }
 

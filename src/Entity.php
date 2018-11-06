@@ -1,12 +1,11 @@
 <?php namespace Maer\Entity;
 
-use ArrayAccess;
 use Closure;
 use InvalidArgumentException;
 use JsonSerializable;
 use Traversable;
 
-abstract class Entity implements JsonSerializable, ArrayAccess
+abstract class Entity implements JsonSerializable
 {
     /**
      * Parameter list
@@ -15,17 +14,29 @@ abstract class Entity implements JsonSerializable, ArrayAccess
     protected $_params   = [];
 
     /**
+     * Parameters meta data
+     * @var array
+     */
+    protected $_meta   = [];
+
+    /**
      * Ignore these params when exporting the entity
      * @var array
      */
     protected $_protect  = [];
 
     /**
-     * Specific entity settings
+     * User defined settings
      * @var array
      */
-    protected $_settings = [
-        'silent' => false,
+    protected $_settings = [];
+
+    /**
+     * Default entity settings
+     * @var array
+     */
+    protected $_defaultSettings = [
+        'silent'     => false,
     ];
 
     /**
@@ -40,20 +51,24 @@ abstract class Entity implements JsonSerializable, ArrayAccess
      */
     public function __construct(array $params = [], Closure $transformer = null)
     {
+        $this->_settings = array_replace_recursive(
+            $this->_defaultSettings,
+            $this->_settings
+        );
+
+        // Get all parameters default value and types
+        foreach ($this->_params as $key => $value) {
+            $this->_meta[$key] = [
+                'default' => $value,
+                'type'    => strtolower(gettype($value)),
+            ];
+        }
+
         $params = $this->__validate($params);
 
         // If we got a transformer, call it
         if ($transformer instanceof Closure) {
             $params = $this->__transform($transformer, $params);
-        }
-
-        // Get all defaults, data types and set the passed params
-        foreach ($this->_params as $key => $value) {
-            $this->_params[$key] = [
-                'value'   => $value,
-                'default' => $value,
-                'type'    => strtolower(gettype($value)),
-            ];
         }
 
         $this->update($params);
@@ -107,14 +122,14 @@ abstract class Entity implements JsonSerializable, ArrayAccess
 
         if ($key) {
             if ($this->has($key)) {
-                $this->_params[$key]['value'] = $param['default'];
+                $this->_params[$key] = $this->_meta[$key]['default'];
             }
 
             return;
         }
 
-        foreach ($this->_params as $key => $param) {
-            $this->_params[$key]['value'] = $param['default'];
+        foreach ($this->_meta as $key => $param) {
+            $this->_params[$key] = $param['default'];
         }
     }
 
@@ -137,28 +152,21 @@ abstract class Entity implements JsonSerializable, ArrayAccess
      * @param  array $protect
      * @return array
      */
-    public function toArray($protect = null)
+    public function toArray(array $protect = [])
     {
-        $protect = is_array($protect)
-            ? $protect
-            : $this->_protect;
-
-        $params = $this->_params;
+        $protect = $protect ?: $this->_protect;
+        $return  = $this->_params;
 
         if ($protect) {
-            $params = $this->_params;
-
             foreach ($protect as $key) {
-                unset($params[$key]);
+                if (array_key_exists($key, $return)) {
+                    unset($return[$key]);
+                }
             }
         }
 
-        foreach ($params as $key => $p) {
-            $params[$key] = $p['value'];
-        }
-
         // Do json encode and decode to convert all levels to arrays
-        return json_decode(json_encode($params), true, 512);
+        return json_decode(json_encode($return), true, 512);
     }
 
 
@@ -177,7 +185,7 @@ abstract class Entity implements JsonSerializable, ArrayAccess
             return;
         }
 
-        return $this->_params[$key]['value'];
+        return $this->_params[$key];
     }
 
 
@@ -189,7 +197,7 @@ abstract class Entity implements JsonSerializable, ArrayAccess
      */
     public function __set($key, $value)
     {
-        if (!$this->has($key)) {
+        if (!$this->has($key) || !array_key_exists($key, $this->_meta)) {
             if (!$this->_silent) {
                 throw new \Exception('The entity ' . __CLASS__ . ' do not have a parameter called ' . $key);
             }
@@ -198,11 +206,52 @@ abstract class Entity implements JsonSerializable, ArrayAccess
         }
 
         // Since 'null' is a wildecard (any type goes), we don't want to cast those
-        if ($this->_params[$key]['type'] != "null") {
-            settype($value, $this->_params[$key]['type']);
+        if ($this->_meta[$key]['type'] != "null") {
+            settype($value, $this->_meta[$key]['type']);
         }
 
-        return $this->_params[$key]['value'] = $this->__transform($key, $value);
+        return $this->_params[$key] = $this->__transform($key, $value);
+    }
+
+
+    /**
+     * Convert array to entities
+     *
+     * @param  array   $params
+     * @param  string  $index    Set the value in this key as index
+     * @param  Closure $transformer Executed before the entity gets populated
+     *
+     * @return Entity|array
+     */
+    public static function make($params = null, $index = null, Closure $transformer = null)
+    {
+        $params = static::__validate($params);
+
+        // Check if it is a multi dimensional array
+        $multi = false;
+
+        if ($params) {
+            reset($params);
+            $key   = key($params);
+            $multi = is_int($key) && is_array($params[$key]);
+        }
+
+        if ($multi || (!$param && is_array($params))) {
+            return new Collection($params, static::class, $index, $transformer);
+        }
+
+        return new static($params, $transformer);
+    }
+
+
+    /**
+     * Return the params as json and remove the protected keys
+     *
+     * @return array from json data
+     */
+    public function jsonSerialize()
+    {
+        return $this->toArray();
     }
 
 
@@ -253,53 +302,10 @@ abstract class Entity implements JsonSerializable, ArrayAccess
             $params = (array)$params;
         }
 
-        if (!is_array($params)) {
-            if ($this->arrayGet($this->_setup, 'suppress_errors') === true) {
-                return;
-            }
-
+        if (!is_array($params) && !is_null($params)) {
             throw new InvalidArgumentException('Only arrays or objects implementing the Traversable interface allowed');
         }
 
         return $params;
-    }
-
-
-    /**
-     * Return the params as json and remove the protected keys
-     *
-     * @return array from json data
-     */
-    public function jsonSerialize()
-    {
-        return $this->toArray();
-    }
-
-    public function offsetSet($key, $value)
-    {
-        if (!$key) {
-            throw new InvalidArgumentException("You can't push values to an entity");
-        }
-
-        if ($key && !$this->has($key)) {
-            throw new InvalidArgumentException("Unknown property {$key}");
-        }
-
-        $this->__set($key, $value);
-    }
-
-    public function offsetExists($key)
-    {
-        return isset($this->_params[$key]);
-    }
-
-    public function offsetUnset($key)
-    {
-        throw new InvalidArgumentException("You can't unset an entity property");
-    }
-
-    public function offsetGet($key)
-    {
-        return $this->__get($key);
     }
 }

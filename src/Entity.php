@@ -76,6 +76,14 @@ abstract class Entity implements JsonSerializable
             throw new InvalidArgumentException('Only arrays or objects implementing the Traversable interface allowed');
         }
 
+        $convertSnakeToCamel = isset($this->_setup['snake_to_camel'])
+            ? $this->_setup['snake_to_camel']
+            : false;
+
+        if ($convertSnakeToCamel === true) {
+            $data = $this->convertSnakeToCamel($data);
+        }
+
         $this->_ignoreExisting = true;
 
         // Run the before modifier
@@ -220,6 +228,36 @@ abstract class Entity implements JsonSerializable
 
 
     /**
+     * Convert property names snake case to camel case
+     * @param  array  $data
+     * @return array
+     */
+    protected function convertSnakeToCamel(array $data)
+    {
+        foreach ($data as $key => $value) {
+            $pos = strpos($key, '_');
+
+            if ($pos === false) {
+                continue;
+            }
+
+            // Create the new key
+            $newKey = lcfirst(ucwords(trim(str_replace('_', ' ', $key))));
+            $newKey = $pos === 0 ? '_' . $newKey : $newKey;
+            $newKey = str_replace(' ', '', $newKey);
+
+            // Add it to the data array
+            $data[$newKey] = $value;
+
+            // Unset the old key
+            unset($data[$key]);
+        }
+
+        return $data;
+    }
+
+
+    /**
      * Check if a property is set.
      *
      * @param string $key
@@ -245,6 +283,29 @@ abstract class Entity implements JsonSerializable
     public function has($key)
     {
         return array_key_exists($key, $this->_params);
+    }
+
+
+    /**
+     * Replace the data with the supplied array
+     *
+     * @param  array  $data
+     */
+    public function replace(array $data)
+    {
+        $convertSnakeToCamel = isset($this->_setup['snake_to_camel'])
+            ? $this->_setup['snake_to_camel']
+            : false;
+
+        $data = $this->convertSnakeToCamel($data);
+
+        foreach ($data as $key => $value) {
+            if (!$this->has($key)) {
+                continue;
+            }
+
+            $this->{$key} = $value;
+        }
     }
 
 

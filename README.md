@@ -28,12 +28,13 @@ $ composer require maer/entity 1.*
     - [Convert an array to entity](#convert-an-array-to-entity)
     - [Convert a multidimensional array to a list of entities](#convert-a-multidimensional-array-to-a-list-of-entities)
     - [Modify values on instantiation](#modify-values-on-instantiation)
-    - [Change the behavior with the $_setup property](#change-the-behavior-with-the-$_setup-property)
+    - [Change the behavior with the $\_setup property](#change-the-behavior-with-the-$_setup-property)
 - [**Helper methods**](#helper-methods)
     - [Check if a property exists](#check-if-a-property-exists)
     - [Get a property formatted as date](#get-a-property-formatted-as-date)
     - [Convert an entity to arrays](#convert-an-entity-to-arrays)
     - [Convert an entity to JSON](#convert-an-entity-to-json)
+    - [Replace entity data](#replace-entity-data)
     - [Create your own helpers](#create-your-own-helpers)
 
 
@@ -302,6 +303,7 @@ There is a `Entity::$_setup` property which can help you modify some of the defa
 |------------------|---------|-----------------------------------------------------------|
 | suppress_errors  | boolean | `false`      | When true, it doesn't throw any exceptions |
 | invert_map       | boolean | `false`      | When true, swap position for `from_key` and `to_key` for the `$_map` property |
+| snake_to_camel   | boolean | `false`      | When true, all in keys data with `snake_case` will be converted to `camelCase` before the entity is populated. This only affects the top most keys, not in nested arrays or any values |
 
 
 **Usage**
@@ -372,6 +374,25 @@ $json = json_encode($hero);
 ```
 
 _All properties in the `$_protect = []` list will be removed._
+
+
+### Replace entity data
+Sometimes you want to update the data in an entity. If it's just a few values, then doing `$entity->foo = 'bar';` will work fine, but if you have larger entities with a lot of properties you want to replace, you can use the `->replace(array $data)`-method:
+
+```php
+// New data
+$data = [
+    'name' => 'Batman',
+    ...
+];
+
+$entity->replace($data);
+
+// $entity->name now has the value "batman"
+```
+
+This will replace the existing entity-properties with the data from the array.
+
 
 ### Create your own helpers
 

@@ -43,7 +43,7 @@ class Registry
      *
      * @return $this
      */
-    public function add(string $entityName, array $params = []): Registry
+    public function add(string $entityName, array $params, string $privatePrefix = '__'): Registry
     {
         if ($this->has($entityName)) {
             // It's already registered. No need to do it again
@@ -54,6 +54,10 @@ class Registry
 
         // Check the default types
         foreach ($params as $key => $value) {
+            if (strpos($key, $privatePrefix) === 0) {
+                continue;
+            }
+
             $this->registry[$entityName][$key] = new Property(
                 $this->getTypeIdFromString(gettype($value)),
                 $value
@@ -70,9 +74,14 @@ class Registry
      * @param  string  $entityName
      * @return boolean
      */
-    public function has(string $entityName): bool
+    public function has(string $entityName, string $key = null): bool
     {
-        return array_key_exists($entityName, $this->registry);
+        if (is_null($key)) {
+            return array_key_exists($entityName, $this->registry);
+        }
+
+        return array_key_exists($entityName, $this->registry)
+            && array_key_exists($key, $this->registry[$entityName]);
     }
 
 
@@ -186,6 +195,19 @@ class Registry
         }, $this->registry[$entityName]);
     }
 
+
+    /**
+     * Get the property names of an entity
+     *
+     * @param  string $entityName
+     * @return array
+     */
+    public function getEntityProperties(string $entityName) : array
+    {
+        $this->exceptionIfNotRegistered($entityName);
+
+        return array_keys($this->registry[$entityName]);
+    }
 
     /**
      * Check if a value can be casted as a string

@@ -1,16 +1,12 @@
 <?php namespace Maer\Entity;
 
+use Closure;
 use InvalidArgumentException;
+use JsonSerializable;
+use OutOfBoundsException;
 
-class Entity
+abstract class Entity implements JsonSerializable
 {
-    /**
-     * Entity properties
-     *
-     * @var array
-     */
-    protected $_props = [];
-
     /**
      * @var \Maer\Entity\Registry
      */
@@ -20,7 +16,7 @@ class Entity
     /**
      * @param array $params
      */
-    public function __construct(array $params = [])
+    public function __construct(array $params = [], Closure $modifier = null)
     {
         // Make sure we have an instance of the registry class
         if (is_null(static::$registry)) {
@@ -28,9 +24,32 @@ class Entity
         }
 
         // Register the entity
-        static::$registry->add(static::class, $this->_props);
+        static::$registry->add(
+            static::class,
+            get_object_vars($this),
+            $this->ignorePrefix()
+        );
+
+        $params = $this->modifier($params);
 
         $this->replace($params);
+    }
+
+
+    /**
+     * Create one or more entities
+     *
+     * @param  array|Traversable $data
+     * @param  string|null       $index Property value that should be used as index
+     * @param  Closure           $modifier
+     *
+     * @throws InvalidArgumentException if getting invalid data
+     *
+     * @return Entity|[]
+     */
+    public static function make($data, ?string $index = null, Closure $modifier = null)
+    {
+        return Helpers::makeEntities(static::class, $data, $index, $modifier);
     }
 
 
@@ -42,16 +61,71 @@ class Entity
      */
     public function has(string $key): bool
     {
-        return array_key_exists($key, $this->_props);
+        return static::$registry->has(static::class, $key);
+    }
+
+
+    /**
+     * Get a value
+     *
+     * @param  string $key
+     *
+     * @throws OutOfBoundsException if the property doesn't exist
+     *
+     * @return mixed
+     */
+    public function __get(string $key)
+    {
+        $this->exceptionOnUnknownKey($key);
+
+        return $this->{$key};
+    }
+
+
+    /**
+     * Check if a property exists
+     *
+     * @param  string  $key
+     * @return boolean
+     */
+    public function __isset(string $key)
+    {
+        return isset($this->{$key});
+    }
+
+
+    /**
+     * Set a value
+     *
+     * @param  string $key
+     * @param  mixed  $value
+     *
+     * @throws OutOfBoundsException if the property doesn't exist
+     *
+     * @return mixed  $value The value will be returned
+     */
+    public function __set(string $key, $value)
+    {
+        $this->exceptionOnUnknownKey($key);
+
+        return $this->{$key} = static::$registry->castValue(
+            static::class,
+            $key,
+            $value
+        );
     }
 
 
     /**
      * Reset the entity to it's default values
+     *
+     * @return $this
      */
-    public function reset()
+    public function reset(): Entity
     {
-        $this->_props = static::$registry->getDefaultValues(static::class);
+        $this->replace(static::$registry->getDefaultValues(static::class));
+
+        return $this;
     }
 
 
@@ -59,14 +133,14 @@ class Entity
      * Reset a property to it's default value
      *
      * @param  string $key
+     *
+     * @return $this
      */
-    public function resetProp(string $key)
+    public function resetProp(string $key): Entity
     {
-        if (!$this->has($key)) {
-            throw new InvalidArgumentException(static::class . " does not have any property called '{$key}'");
-        }
+        $this->__set($key, static::$registry->getPropDefaultValue(static::class, $key));
 
-        $this->_props[$key] = static::$registry->getPropDefaultValue(static::class, $key);
+        return $this;
     }
 
 
@@ -77,14 +151,117 @@ class Entity
      *
      * @return $this
      */
-    protected function replace(array $params = []): Entity
+    public function replace(array $params = []): Entity
     {
         foreach ($params as $key => $value) {
-            if ($this->has($key)) {
-                $this->_props[$key] = static::$registry->castValue(static::class, $key, $value);
+            if (!$this->has($key)) {
+                continue;
             }
+
+            $this->__set($key, $value);
         }
 
         return $this;
+    }
+
+
+    /**
+     * Get the entity as array
+     *
+     * @param  array  $ignore Keys to ignore (overrides protect())
+     * @return array
+     */
+    public function asArray(array $ignore = []) : array
+    {
+        $properties = static::$registry->getEntityProperties(
+            static::class
+        );
+
+        $data      = [];
+        $protected = $ignore ?: $this->protect();
+
+        foreach ($properties as $key) {
+            if (in_array($key, $protected)) {
+                continue;
+            }
+
+            $data[$key] = $this->{$key};
+        }
+
+        return $data;
+    }
+
+
+    /**
+     * Return the data that should be serialized as json
+     *
+     * @return array
+     */
+    public function jsonSerialize()
+    {
+        return $this->asArray();
+    }
+
+
+    /**
+     * Get the prefix for ignored properties
+     *
+     * @return string
+     */
+    protected function ignorePrefix() : string
+    {
+        return '__';
+    }
+
+
+    /**
+     * Get the entity settings
+     *
+     * @return array
+     */
+    protected function settings() : array
+    {
+        return [];
+    }
+
+
+    /**
+     * Get the list of properties to ignore when getting the entity
+     * as an array or as json
+     *
+     * @return array
+     */
+    protected function protect() : array
+    {
+        return [];
+    }
+
+
+    /**
+     * Modify the params before populating the entity
+     *
+     * @param  array  $params
+     * @return array
+     */
+    protected function modifier(array $params)
+    {
+        return $params;
+    }
+
+
+    /**
+     * Check if the key exists, or throw an exception
+     *
+     * @param  mixed $key
+     *
+     * @throws OutOfBoundsException if the property doesn't exist
+     */
+    protected function exceptionOnUnknownKey($key)
+    {
+        if (!$this->has($key)) {
+            throw new OutOfBoundsException(
+                'The property ' . static::class . "-> {$key} does not exist"
+            );
+        }
     }
 }

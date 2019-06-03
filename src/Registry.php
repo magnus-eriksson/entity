@@ -32,7 +32,7 @@ class Registry
      * Registry of entities and their property types & default values
      * @var array
      */
-    protected $registry = [];
+    protected $entities = [];
 
 
     /**
@@ -43,14 +43,18 @@ class Registry
      *
      * @return $this
      */
-    public function add(string $entityName, array $params, string $privatePrefix = '__'): Registry
+    public function add(string $entityName, array $params, string $privatePrefix = '__', array $map = []): Registry
     {
         if ($this->has($entityName)) {
             // It's already registered. No need to do it again
             return $this;
         }
 
-        $this->registry[$entityName] = [];
+        $this->entities[$entityName] = [
+            'defaults' => [],
+            'types'    => [],
+            'map'      => array_flip($map),
+        ];
 
         // Check the default types
         foreach ($params as $key => $value) {
@@ -58,10 +62,10 @@ class Registry
                 continue;
             }
 
-            $this->registry[$entityName][$key] = new Property(
-                $this->getTypeIdFromString(gettype($value)),
-                $value
-            );
+            $type = $this->getTypeIdFromString(gettype($value));
+
+            $this->entities[$entityName]['defaults'][$key] = $value;
+            $this->entities[$entityName]['types'][$key]    = $type;
         }
 
         return $this;
@@ -74,14 +78,92 @@ class Registry
      * @param  string  $entityName
      * @return boolean
      */
-    public function has(string $entityName, string $key = null): bool
+    public function has(string $entityName, string $propertyName = null): bool
     {
-        if (is_null($key)) {
-            return array_key_exists($entityName, $this->registry);
+        if (!array_key_exists($entityName, $this->entities)) {
+            return false;
         }
 
-        return array_key_exists($entityName, $this->registry)
-            && array_key_exists($key, $this->registry[$entityName]);
+        return is_null($propertyName)
+            || array_key_exists($propertyName, $this->entities[$entityName]['defaults'])
+            || array_key_exists($propertyName, $this->entities[$entityName]['map']);
+    }
+
+
+    /**
+     * Create a new array with all mapped properties resolved
+     *
+     * @param  string $entityName
+     * @param  array  $params
+     *
+     * @return array
+     */
+    public function resolveMappedProperties(string $entityName, array $params) : array
+    {
+        $this->exceptionIfNotRegistered($entityName);
+
+        foreach ($this->entities[$entityName]['map'] as $key => $realKey) {
+            if (!$this->arrayHas($params, $key)) {
+                continue;
+            }
+
+            $params[$realKey] = $this->arrayGet($params, $key);
+        }
+
+        return $params;
+    }
+
+
+    /**
+     * Check if a array key exists (using dot notation)
+     *
+     * @param  array  &$params
+     * @param  string $key
+     *
+     * @return bool
+     */
+    protected function arrayHas(array &$params, string $key) : bool
+    {
+        $keys  = explode('.', $key);
+        $value = $params;
+
+        foreach ($keys as $k) {
+            if (array_key_exists($k, $value)) {
+                $value =& $value[$k];
+                continue;
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+
+    /**
+     * Get a nested array value (using dot notation)
+     *
+     * @param  array  &$params
+     * @param  string $key
+     * @param  mixed  $fallback Returned if the key doesn't exist
+     *
+     * @return mixed
+     */
+    protected function arrayGet(array &$params, string $key, $fallback = null)
+    {
+        $keys  = explode('.', $key);
+        $value = $params;
+
+        foreach ($keys as $k) {
+            if (array_key_exists($k, $value)) {
+                $value =& $value[$k];
+                continue;
+            }
+
+            return $falback;
+        }
+
+        return $value;
     }
 
 
@@ -99,7 +181,7 @@ class Registry
     {
         $this->exceptionIfNotRegistered($entityName, $propertyName);
 
-        return $this->registry[$entityName][$propertyName]->type();
+        return $this->entities[$entityName]['types'][$propertyName];
     }
 
 
@@ -119,12 +201,6 @@ class Registry
     {
         $this->exceptionIfNotRegistered($entityName, $propertyName);
 
-        if (!$this->has($entityName)) {
-            throw new Exception(
-                "The entity hasn't been registered in the registry"
-            );
-        }
-
         $type = $this->getPropertyType($entityName, $propertyName);
 
         switch ($type) {
@@ -135,7 +211,7 @@ class Registry
             case self::TYPE_FLOAT:
                 return (float)$value;
             case self::TYPE_STRING:
-                if (!$this->canBeStringified($value)) {
+                if (!Helpers::canBeStringified($value)) {
                     throw new InvalidArgumentException(
                         "'{$entityName}->{$propertyName}': Type '" . gettype($value) . "' can not be cast as string"
                     );
@@ -173,9 +249,7 @@ class Registry
     {
         $this->exceptionIfNotRegistered($entityName);
 
-        return array_map(function ($param) {
-            return $param->value();
-        }, $this->registry[$entityName]);
+        return $this->entities[$entityName]['defaults'];
     }
 
 
@@ -184,15 +258,14 @@ class Registry
      *
      * @param  string $entityName
      * @param  string $propertyName
-     * @return array
+     *
+     * @return mixed
      */
-    public function getDefaultValue(string $entityName, string $propertyName): array
+    public function getPropertyDefaultValue(string $entityName, string $propertyName)
     {
         $this->exceptionIfNotRegistered($entityName, $propertyName);
 
-        return array_map(function ($param) {
-            return $param->value();
-        }, $this->registry[$entityName]);
+        return $this->entities[$entityName]['defaults'][$propertyName];
     }
 
 
@@ -200,29 +273,15 @@ class Registry
      * Get the property names of an entity
      *
      * @param  string $entityName
+     *
      * @return array
      */
     public function getEntityProperties(string $entityName) : array
     {
         $this->exceptionIfNotRegistered($entityName);
 
-        return array_keys($this->registry[$entityName]);
+        return array_keys($this->entities[$entityName]['defaults']);
     }
-
-    /**
-     * Check if a value can be casted as a string
-     *
-     * @param  mixed $value
-     *
-     * @return bool
-     */
-    protected function canBeStringified($value): bool
-    {
-        return $value === null
-            || is_scalar($value)
-            || (is_object($value) && method_exists($value, '__toString'));
-    }
-
 
 
     /**
@@ -249,13 +308,9 @@ class Registry
             return true;
         }
 
-        // Check the property name
-        if (!$propertyName) {
-            throw new InvalidArgumentException("Invalid property name: {$propertyName}");
-        }
 
         // Check if the property exists
-        if (!isset($this->registry[$entityName][$propertyName])) {
+        if (!$this->has($entityName, $propertyName)) {
             throw new Exception("The entity {$entityName} doesn't have a property called '{$propertyName}'");
         }
 

@@ -4,7 +4,18 @@ use Closure;
 
 class Helpers
 {
-    public static function makeEntities(string $entity, array $data, string $index = null, ?Closure $modifier = null)
+    /**
+     * Make one or multiple entities
+     *
+     * @param  string            $entity   Fully qualified entity name
+     * @param  array|Traversable $data     Data to be populated
+     * @param  string|null       $index    Which property should be used as index
+     * @param  Closure|null      $modifier Modify the data before population
+     *
+     * @throws InvalidArgumentException if invalid
+     * @return Entity|array|null
+     */
+    public static function makeEntities(string $entity, $data, string $index = null, ?Closure $modifier = null)
     {
         if ($data instanceof Traversable) {
             $data = iterator_to_array($data);
@@ -41,5 +52,20 @@ class Helpers
         }
 
         return $entities;
+    }
+
+
+    /**
+     * Check if a value can be casted as a string
+     *
+     * @param  mixed $value
+     *
+     * @return bool
+     */
+    public static function canBeStringified($value): bool
+    {
+        return $value === null
+            || is_scalar($value)
+            || (is_object($value) && method_exists($value, '__toString'));
     }
 }

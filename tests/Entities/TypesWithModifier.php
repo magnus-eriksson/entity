@@ -4,7 +4,7 @@ use Maer\Entity\Entity;
 
 class TypesWithModifier extends Types
 {
-    protected function modifier(array $params)
+    protected function modifier(array $params) : array
     {
         if (array_key_exists('integer', $params)) {
             $params['integer'] = $params['integer'] + 1000;

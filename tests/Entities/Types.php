@@ -13,4 +13,17 @@ class Types extends Entity
     protected $array   = [];
     protected $string  = '';
     protected $any     = null;
+
+
+    /**
+     * Map properties
+     *
+     * @return array
+     */
+    protected function map() : array
+    {
+        return [
+            'integer' => 'first.second.int',
+        ];
+    }
 }

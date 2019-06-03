@@ -16,22 +16,20 @@ abstract class Entity implements JsonSerializable
     /**
      * @param array $params
      */
-    public function __construct(array $params = [], Closure $modifier = null)
+    public function __construct(array $params = [])
     {
         // Make sure we have an instance of the registry class
         if (is_null(static::$registry)) {
             static::$registry = new Registry;
         }
 
-        // Register the entity
-        static::$registry->add(
-            static::class,
-            get_object_vars($this),
-            $this->ignorePrefix()
-        );
+        if (!$this->has(static::class)) {
+            // Register the entity to the registry
+            $props = get_object_vars($this);
+            static::$registry->add(static::class, $props, $this->ignorePrefix(), $this->map());
+        }
 
-        $params = $this->modifier($params);
-
+        // Set the values
         $this->replace($params);
     }
 
@@ -108,11 +106,7 @@ abstract class Entity implements JsonSerializable
     {
         $this->exceptionOnUnknownKey($key);
 
-        return $this->{$key} = static::$registry->castValue(
-            static::class,
-            $key,
-            $value
-        );
+        return $this->{$key} = static::$registry->castValue(static::class, $key, $value);
     }
 
 
@@ -136,9 +130,9 @@ abstract class Entity implements JsonSerializable
      *
      * @return $this
      */
-    public function resetProp(string $key): Entity
+    public function resetProperty(string $key): Entity
     {
-        $this->__set($key, static::$registry->getPropDefaultValue(static::class, $key));
+        $this->__set($key, static::$registry->getPropertyDefaultValue(static::class, $key));
 
         return $this;
     }
@@ -147,12 +141,18 @@ abstract class Entity implements JsonSerializable
     /**
      * Replace the existing data
      *
-     * @param  array  $params
+     * @param  array   $params
      *
      * @return $this
      */
     public function replace(array $params = []): Entity
     {
+        // Resolve mapped properties
+        $params = static::$registry->resolveMappedProperties(static::class, $params);
+
+        // Set the values we got
+        $params = $this->modifier($params);
+
         foreach ($params as $key => $value) {
             if (!$this->has($key)) {
                 continue;
@@ -215,17 +215,6 @@ abstract class Entity implements JsonSerializable
 
 
     /**
-     * Get the entity settings
-     *
-     * @return array
-     */
-    protected function settings() : array
-    {
-        return [];
-    }
-
-
-    /**
      * Get the list of properties to ignore when getting the entity
      * as an array or as json
      *
@@ -238,12 +227,22 @@ abstract class Entity implements JsonSerializable
 
 
     /**
+     * Map of array keys => property, using dot notation
+     *
+     * @return array
+     */
+    protected function map() : array
+    {
+        return [];
+    }
+
+    /**
      * Modify the params before populating the entity
      *
      * @param  array  $params
      * @return array
      */
-    protected function modifier(array $params)
+    protected function modifier(array $params) : array
     {
         return $params;
     }
@@ -260,8 +259,24 @@ abstract class Entity implements JsonSerializable
     {
         if (!$this->has($key)) {
             throw new OutOfBoundsException(
-                'The property ' . static::class . "-> {$key} does not exist"
+                'The property ' . static::class . "->{$key} does not exist"
             );
         }
+    }
+
+
+    /**
+     * Get a property name prefixed with the ignore prefix
+     *
+     * @param  string $name
+     * @param  mixed  $fallback
+     *
+     * @return mixed
+     */
+    protected function getIgnoredProp(string $name, $fallback = null)
+    {
+        $prop = $this->ignorePrefix() . $name;
+
+        return $this->{$prop} ?? $fallback;
     }
 }

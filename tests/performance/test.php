@@ -9,6 +9,17 @@ require __DIR__ . '/Entity005.php';
 
 $objects = [];
 
+function humanSize($bytes)
+{
+    $decimals = 2;
+    $size     = ['B','kB','MB','GB','TB','PB','EB','ZB','YB'];
+    $factor   = floor((strlen($bytes) - 1) / 3);
+
+    return sprintf("%.{$decimals}f"
+        , $bytes / pow(1024, $factor))
+        . ' ' . @$size[$factor];
+}
+
 $iterations = 15000;
 $start      = microtime(true);
 
@@ -59,9 +70,11 @@ for ($i = 0; $i < $iterations; $i++) {
 }
 
 $end     = microtime(true);
-$peak    = memory_get_peak_usage() / 1024;
+$peak    = memory_get_peak_usage();
 $time    = $end - $start;
 
-echo 'Entities: ' . count($objects) . PHP_EOL;
-echo 'Time: ' . round($time, 6) . ' sec', PHP_EOL;
-echo round($peak, 2) . ' kB' . PHP_EOL;
+echo 'Unique entities: 5' . PHP_EOL;
+echo 'Instances created per entity: ' . $iterations . PHP_EOL;
+echo 'Total entities created: ' . count($objects) . PHP_EOL;
+echo 'Total time: ' . round($time, 6) . ' sec', PHP_EOL;
+echo 'Total memory: ' . humanSize($peak) . PHP_EOL;

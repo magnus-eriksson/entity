@@ -28,6 +28,7 @@
         "test": [
             "@cs",
             "@phpunit"
-        ]
+        ],
+        "performance": "php tests/performance/test.php"
     }
 }

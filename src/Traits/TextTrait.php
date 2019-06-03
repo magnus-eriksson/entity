@@ -13,7 +13,7 @@ trait TextTrait
      *
      * @return string
      */
-    function excerpt(string $propertyName, int $maxLength = 300, string $suffix = '...') : string
+    public function excerpt(string $propertyName, int $maxLength = 300, string $suffix = '...') : string
     {
         $text = $this->{$propertyName};
 

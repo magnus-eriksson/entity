@@ -15,13 +15,7 @@ trait TextTrait
      */
     public function excerpt(string $propertyName, int $maxLength = 300, string $suffix = '...') : string
     {
-        $text = $this->{$propertyName};
-
-        if (!is_null($text) && !is_string($text)) {
-            throw new InvalidArgumentException(
-                "You can only create excerpts from strings"
-            );
-        }
+        $text = (string)$this->{$propertyName};
 
         if (is_null($text) || strlen($text) <= $maxLength) {
             return $text;

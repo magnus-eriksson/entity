@@ -2,7 +2,6 @@
 
 use PHPUnit\Framework\TestCase;
 use Tests\Entities\Types;
-use Tests\Entities\TypesWithModifier;
 
 class EntityConvertTest extends TestCase
 {

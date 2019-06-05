@@ -8,23 +8,23 @@ class Registry
     /**
      * Type constants
      */
-    const TYPE_BOOL    = 1;
-    const TYPE_INTEGER = 2;
-    const TYPE_FLOAT   = 3;
-    const TYPE_STRING  = 4;
-    const TYPE_ARRAY   = 5;
-    const TYPE_ANY     = 6;
+    const TYPE_BOOL  = 1;
+    const TYPE_INT   = 2;
+    const TYPE_FLOAT = 3;
+    const TYPE_STR   = 4;
+    const TYPE_ARR   = 5;
+    const TYPE_ANY   = 6;
 
     /**
      * Type translation
      * @var array
      */
     protected $types = [
-        'string'  => self::TYPE_BOOL,
-        'integer' => self::TYPE_INTEGER,
+        'boolean' => self::TYPE_BOOL,
+        'integer' => self::TYPE_INT,
         'double'  => self::TYPE_FLOAT,
-        'string'  => self::TYPE_STRING,
-        'array'   => self::TYPE_ARRAY,
+        'string'  => self::TYPE_STR,
+        'array'   => self::TYPE_ARR,
         'any'     => self::TYPE_ANY,
     ];
 
@@ -40,10 +40,13 @@ class Registry
      *
      * @param  string $entityName
      * @param  array  $params
+     * @param  string $privatePrefix
+     * @param  array  $map
+     * @param  array  $settings
      *
      * @return $this
      */
-    public function add(string $entityName, array $params, string $privatePrefix = '__', array $map = []): Registry
+    public function add(string $entityName, array $params, string $privatePrefix = '__', array $map = [], array $settings = []): Registry
     {
         if ($this->has($entityName)) {
             // It's already registered. No need to do it again
@@ -54,6 +57,7 @@ class Registry
             'defaults' => [],
             'types'    => [],
             'map'      => array_flip($map),
+            'settings' => $settings,
         ];
 
         // Check the default types
@@ -87,6 +91,23 @@ class Registry
         return is_null($propertyName)
             || array_key_exists($propertyName, $this->entities[$entityName]['defaults'])
             || array_key_exists($propertyName, $this->entities[$entityName]['map']);
+    }
+
+
+    /**
+     * Get a setting value from an entity
+     *
+     * @param  string $entityName
+     * @param  string $key
+     * @param  mixed  $fallback
+     *
+     * @return mixed
+     */
+    public function getSetting(string $entityName, string $key, $fallback = null)
+    {
+        $this->exceptionIfNotRegistered($entityName);
+
+        return $this->entities[$entityName]['settings'][$key] ?? $fallback;
     }
 
 
@@ -206,18 +227,18 @@ class Registry
         switch ($type) {
             case self::TYPE_BOOL:
                 return (bool)$value;
-            case self::TYPE_INTEGER:
+            case self::TYPE_INT:
                 return (int)$value;
             case self::TYPE_FLOAT:
                 return (float)$value;
-            case self::TYPE_STRING:
+            case self::TYPE_STR:
                 if (!Helpers::canBeStringified($value)) {
                     throw new InvalidArgumentException(
                         "'{$entityName}->{$propertyName}': Type '" . gettype($value) . "' can not be cast as string"
                     );
                 }
                 return (string)$value;
-            case self::TYPE_ARRAY:
+            case self::TYPE_ARR:
                 return (array)$value;
             default:
                 return $value;

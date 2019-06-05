@@ -26,7 +26,13 @@ abstract class Entity implements JsonSerializable
         if (!$this->has(static::class)) {
             // Register the entity to the registry
             $props = get_object_vars($this);
-            static::$registry->add(static::class, $props, $this->ignorePrefix(), $this->map());
+            static::$registry->add(
+                static::class,
+                $props,
+                $this->ignorePrefix(),
+                $this->map(),
+                $this->settings()
+            );
         }
 
         // Set the values
@@ -40,6 +46,7 @@ abstract class Entity implements JsonSerializable
      * @param  array|Traversable $data
      * @param  string|null       $index Property value that should be used as index
      * @param  Closure           $modifier
+     * @param  boolean           $asArray
      *
      * @throws InvalidArgumentException if getting invalid data
      *
@@ -60,6 +67,18 @@ abstract class Entity implements JsonSerializable
     public function has(string $key): bool
     {
         return static::$registry->has(static::class, $key);
+    }
+
+
+    /**
+     * Get the data type of a property
+     *
+     * @param  string  $key
+     * @return int
+     */
+    public function propertyType(string $key): int
+    {
+        return static::$registry->getPropertyType(static::class, $key);
     }
 
 
@@ -235,6 +254,32 @@ abstract class Entity implements JsonSerializable
     {
         return [];
     }
+
+
+    /**
+     * Settings for this entity type
+     *
+     * @return array
+     */
+    public function settings() : array
+    {
+        return [];
+    }
+
+
+    /**
+     * Get a setting value
+     *
+     * @param  string $key
+     * @param  mixed  $fallback
+     *
+     * @return mixed
+     */
+    public function getSetting(string $key, $fallback = null)
+    {
+        return static::$registry->getSetting(static::class, $key, $fallback);
+    }
+
 
     /**
      * Modify the params before populating the entity

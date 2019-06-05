@@ -15,7 +15,7 @@ class Helpers
      * @throws InvalidArgumentException if invalid
      * @return Entity|array|null
      */
-    public static function makeEntities(string $entity, $data, string $index = null, ?Closure $modifier = null)
+    public static function makeEntities(string $entity, $data, string $index = null, ?Closure $modifier = null, bool $asArray = false)
     {
         if ($data instanceof Traversable) {
             $data = iterator_to_array($data);
@@ -36,7 +36,7 @@ class Helpers
             return new $entity($data);
         }
 
-        $entities = new Collection;
+        $entities = $asArray ? [] : new Collection;
         $counter  = 0;
 
         foreach ($data as $item) {

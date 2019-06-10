@@ -52,21 +52,6 @@ class Collection implements ArrayAccess, Countable, JsonSerializable
         }
     }
 
-    /**
-     * Replace all entities in the collection
-     *
-     * @param  array  $data
-     * @param  string $index Set the property to use as index. Leave empty for an indexed array
-     * @return $this
-     */
-    public function replace(array $data, string $index = null) : Collection
-    {
-        foreach ($data as $index => $item) {
-            $this[$index] = $item;
-        }
-
-        return $this;
-    }
 
     /**
      * Get the entity type for this collection
@@ -146,13 +131,7 @@ class Collection implements ArrayAccess, Countable, JsonSerializable
      */
     public function first() : ?Entity
     {
-        if ($this->count() === 0) {
-            return null;
-        }
-
-        reset($this->entities);
-
-        return $this->entities[key($this->entities)];
+        return Helpers::getFirstElement($this->entities);
     }
 
 
@@ -163,17 +142,7 @@ class Collection implements ArrayAccess, Countable, JsonSerializable
      */
     public function last() : ?Entity
     {
-        if ($this->count() === 0) {
-            return null;
-        }
-
-        if ($this->count() === 1) {
-            return $this->first();
-        }
-
-        $items = array_slice($this->entities, -1);
-
-        return array_pop($items);
+        return Helpers::getLastElement($this->entities);
     }
 
 
@@ -187,18 +156,7 @@ class Collection implements ArrayAccess, Countable, JsonSerializable
      */
     public function list(string $property, string $index = null) : array
     {
-        if (!$this->entities) {
-            // We got no entities
-            return [];
-        }
-
-        $list = [];
-        $idx  = 0;
-        foreach ($this->entities as $idx => $entity) {
-            $list[$index ? $entity->{$index} : $idx++] = $entity->{$property};
-        }
-
-        return $list;
+        return Helpers::getPropertyValues($this->entities, $property, $index);
     }
 
 

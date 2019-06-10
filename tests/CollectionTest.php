@@ -180,4 +180,34 @@ class CollectionTest extends TestCase
 
         $this->assertEquals($data, $fromJson);
     }
+
+
+    /**
+     * Test return array instead of Collection instance
+     */
+    public function testReturnArray()
+    {
+        $data = [
+            [
+                'integer' => 0,
+                'boolean' => false,
+                'array'   => ['hello0'],
+                'string'  => 'foobar0',
+                'any'     => 'any0',
+            ],
+            [
+                'integer' => 1,
+                'boolean' => true,
+                'array'   => ['hello1'],
+                'string'  => 'foobar1',
+                'any'     => 'any1',
+            ],
+        ];
+
+        // Fourth argument is $returnArray
+        $array = Types::make($data, null, null, true);
+
+        $this->assertInternalType('array', $array);
+        $this->assertCount(2, $array);
+    }
 }

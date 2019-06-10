@@ -16,7 +16,7 @@ abstract class Entity implements JsonSerializable
     /**
      * @param array $params
      */
-    public function __construct(array $params = [])
+    public function __construct(array $params = [], ?Closure $modifier = null)
     {
         // Make sure we have an instance of the registry class
         if (is_null(static::$registry)) {
@@ -36,7 +36,7 @@ abstract class Entity implements JsonSerializable
         }
 
         // Set the values
-        $this->replace($params);
+        $this->replace($params, $modifier);
     }
 
 
@@ -46,15 +46,15 @@ abstract class Entity implements JsonSerializable
      * @param  array|Traversable $data
      * @param  string|null       $index Property value that should be used as index
      * @param  Closure           $modifier
-     * @param  boolean           $asArray
+     * @param  bool              $returnArray Return as array instead of a Collection instance
      *
      * @throws InvalidArgumentException if getting invalid data
      *
      * @return Entity|[]
      */
-    public static function make($data, ?string $index = null, Closure $modifier = null)
+    public static function make($data, ?string $index = null, Closure $modifier = null, bool $returnArray = false)
     {
-        return Helpers::makeEntities(static::class, $data, $index, $modifier);
+        return Helpers::makeEntities(static::class, $data, $index, $modifier, $returnArray);
     }
 
 
@@ -87,7 +87,7 @@ abstract class Entity implements JsonSerializable
      *
      * @param  string $key
      *
-     * @throws OutOfBoundsException if the property doesn't exist
+     * @throws InvalidArgumentException if the property doesn't exist
      *
      * @return mixed
      */
@@ -117,7 +117,7 @@ abstract class Entity implements JsonSerializable
      * @param  string $key
      * @param  mixed  $value
      *
-     * @throws OutOfBoundsException if the property doesn't exist
+     * @throws InvalidArgumentException if the property doesn't exist
      *
      * @return mixed  $value The value will be returned
      */
@@ -164,13 +164,18 @@ abstract class Entity implements JsonSerializable
      *
      * @return $this
      */
-    public function replace(array $params = []): Entity
+    public function replace(array $params = [], ?Closure $modifier = null): Entity
     {
         // Resolve mapped properties
         $params = static::$registry->resolveMappedProperties(static::class, $params);
 
-        // Set the values we got
-        $params = $this->modifier($params);
+        // Execute the modifier method
+        $this->modifier($params);
+
+        if ($modifier) {
+            // We have a modifier as a closure as well, use that as well
+            $modifier($params);
+        }
 
         foreach ($params as $key => $value) {
             if (!$this->has($key)) {
@@ -268,6 +273,18 @@ abstract class Entity implements JsonSerializable
 
 
     /**
+     * Modify the params before populating the entity
+     *
+     * @param  array  $params
+     *
+     * @return void
+     */
+    protected function modifier(array &$params)
+    {
+    }
+
+
+    /**
      * Get a setting value
      *
      * @param  string $key
@@ -282,28 +299,16 @@ abstract class Entity implements JsonSerializable
 
 
     /**
-     * Modify the params before populating the entity
-     *
-     * @param  array  $params
-     * @return array
-     */
-    protected function modifier(array $params) : array
-    {
-        return $params;
-    }
-
-
-    /**
      * Check if the key exists, or throw an exception
      *
      * @param  mixed $key
      *
-     * @throws OutOfBoundsException if the property doesn't exist
+     * @throws InvalidArgumentException if the property doesn't exist
      */
     protected function exceptionOnUnknownKey($key)
     {
         if (!$this->has($key)) {
-            throw new OutOfBoundsException(
+            throw new InvalidArgumentException(
                 'The property ' . static::class . "->{$key} does not exist"
             );
         }

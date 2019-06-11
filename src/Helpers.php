@@ -93,7 +93,7 @@ class Helpers
      *
      * @return array
      */
-    public function getPropertyValues(array &$array, string $property, string $index = null) : array
+    public static function getPropertyValues(array &$array, string $property, string $index = null) : array
     {
         if (!$array) {
             // We got no entities

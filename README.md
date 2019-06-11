@@ -54,6 +54,7 @@ $ composer require maer/entity
         - [timestamp()](#timestamp)
     - [TextTrait](#texttrait)
         - [excerpt()](#excerpt)
+- [**Changes in version 2**](#changes-in-version-2)
 
 
 ## Define an entity
@@ -601,8 +602,18 @@ The length of the returned string can be less than the max length, but never mor
 The defaults are 300 for max length and "..." as suffix.
 
 
-## Note
+## Changes in version 2
 Version 2 was completely rebuilt to use less memory and to be a bit faster. When tested creating 10.000 entities, it was just slightly faster, but the used memory was about 2-3 times less.
+
+Quick overview of the biggest changes:
+
+* Properties are now defined as protected class properties instead of `$_params = []`
+* Entity::make() now returns an instance of Maer\Entity\Collection as default instead of an array
+* Helper methods, like `$entity->date()`, has moved to traits and are no longer included in the base entity
+* Settings, like map and protect, are now methods returning arrays instead of class properties
+
+
+## Note
 
 If you have any questions, suggestions or issues, let me know!
 

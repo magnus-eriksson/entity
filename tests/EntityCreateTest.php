@@ -149,6 +149,8 @@ class EntityCreateTest extends TestCase
      */
     public function testMakeWithCustomIndex()
     {
+        $indexPropertyName = 'string';
+
         // Create many
         $entities = Types::make([
             [
@@ -172,7 +174,7 @@ class EntityCreateTest extends TestCase
                 'string'  => 'foobar2',
                 'any'     => 'any2'
             ],
-        ], 'string');
+        ], $indexPropertyName);
 
         $this->assertCount(3, $entities);
 

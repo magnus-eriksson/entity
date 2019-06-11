@@ -195,13 +195,11 @@ class EntityCreateTest extends TestCase
     public function testMakeWithModifier()
     {
         // Create the modifier
-        $modifier = function (array $params) {
+        $modifier = function (array &$params) {
             $params['integer'] = $params['integer'] + 1000;
             $params['string']  = 'mod_' . $params['string'];
             $params['array']   = ['mod_' . $params['array'][0]];
             $params['any']     = 'mod_' . $params['any'];
-
-            return $params;
         };
 
         // Create many and add the modifier

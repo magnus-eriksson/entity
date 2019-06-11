@@ -44,6 +44,18 @@ class CollectionTest extends TestCase
         $this->assertCount(5, $entities);
 
         // Test to do a foreach
+        $i = 0;
+        foreach ($entities as $index => $entity) {
+            $this->assertEquals($i,             $entity->integer);
+            $this->assertEquals(true,           $entity->boolean);
+            $this->assertEquals(['hello' . $i], $entity->array);
+            $this->assertEquals('foobar' . $i,  $entity->string);
+            $this->assertEquals('any' . $i,     $entity->any);
+            $i++;
+        }
+
+        // Make sure the iteration worked
+        $this->assertEquals(5, $i);
     }
 
 

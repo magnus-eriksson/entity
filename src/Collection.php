@@ -1,12 +1,14 @@
 <?php namespace Maer\Entity;
 
 use ArrayAccess;
+use ArrayIterator;
 use Closure;
 use Countable;
 use JsonSerializable;
 use InvalidArgumentException;
+use IteratorAggregate;
 
-class Collection implements ArrayAccess, Countable, JsonSerializable
+class Collection implements ArrayAccess, Countable, JsonSerializable, IteratorAggregate
 {
     /**
      * List of entities
@@ -18,7 +20,7 @@ class Collection implements ArrayAccess, Countable, JsonSerializable
      * Collection type
      * @var string
      */
-    protected $entity = null;
+    protected $type = null;
 
 
     /**
@@ -61,7 +63,7 @@ class Collection implements ArrayAccess, Countable, JsonSerializable
      */
     public function getType()
     {
-        return $this->entity;
+        return $this->type;
     }
 
 
@@ -214,6 +216,17 @@ class Collection implements ArrayAccess, Countable, JsonSerializable
 
 
     /**
+     * Return the iterator
+     *
+     * @return ArrayIterator
+     */
+    public function getIterator()
+    {
+        return new ArrayIterator($this->entities);
+    }
+
+
+    /**
      * Validate the entity type
      *
      * @param  mixed $entity
@@ -239,7 +252,7 @@ class Collection implements ArrayAccess, Countable, JsonSerializable
         }
 
         if (!$type) {
-            $this->entity = get_class($entity);
+            $this->type = get_class($entity);
         }
     }
 }

@@ -16,7 +16,7 @@ trait DateTimeTrait
      */
     public function date(string $propertyName, string $format = "F j, Y", string $tz = null) : string
     {
-        $date = $this->dateTime($propertyName);
+        $date = $this->dateTime($propertyName, $tz);
 
         return $date->format($format);
     }

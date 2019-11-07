@@ -1,6 +1,7 @@
 <?php namespace Maer\Entity;
 
 use Closure;
+use InvalidArgumentException;
 
 class Helpers
 {

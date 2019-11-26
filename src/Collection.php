@@ -47,7 +47,7 @@ class Collection implements ArrayAccess, Countable, JsonSerializable, IteratorAg
     {
         $this->exceptionOnInvalidType($entity);
 
-        if (is_null($this->entities)) {
+        if (is_null($offset)) {
             $this->entities[] = $entity;
         } else {
             $this->entities[$offset] = $entity;

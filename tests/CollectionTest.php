@@ -60,6 +60,34 @@ class CollectionTest extends TestCase
 
 
     /**
+     * Test set and unset (array style)
+     */
+    public function testAddingItems()
+    {
+        // Set
+        $collection = new Collection;
+
+        for ($i = 0; $i < 10; $i++) {
+            $collection[] = new Types([
+                'integer' => $i,
+            ]);
+        }
+
+        $this->assertCount(10, $collection);
+        $this->assertEquals(10, $collection->count());
+        $this->assertTrue(isset($collection[5]));
+        $this->assertEquals(5, $collection[5]->integer);
+
+        // Unset
+        unset($collection[5]);
+
+        $this->assertCount(9, $collection);
+        $this->assertEquals(9, $collection->count());
+        $this->assertFalse(isset($collection[5]));
+    }
+
+
+    /**
      * Test first() and last()
      */
     public function testFirstAndLast()

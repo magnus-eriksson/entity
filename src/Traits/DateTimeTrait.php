@@ -1,6 +1,7 @@
 <?php namespace Maer\Entity\Traits;
 
 use DateTime;
+use DateTimeZone;
 
 trait DateTimeTrait
 {

@@ -221,6 +221,7 @@ abstract class Entity implements JsonSerializable
      *
      * @return array
      */
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return $this->asArray();

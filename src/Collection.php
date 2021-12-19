@@ -4,9 +4,9 @@ use ArrayAccess;
 use ArrayIterator;
 use Closure;
 use Countable;
-use JsonSerializable;
 use InvalidArgumentException;
 use IteratorAggregate;
+use JsonSerializable;
 
 class Collection implements ArrayAccess, Countable, JsonSerializable, IteratorAggregate
 {
@@ -30,7 +30,10 @@ class Collection implements ArrayAccess, Countable, JsonSerializable, IteratorAg
     public function __construct(array $data = [], string $index = null)
     {
         if ($data) {
-            $this->replace($data, $index);
+            foreach ($data as $key => $value) {
+                $offset = $index ? $value->$index : $key;
+                $this->offsetSet($offset, $value);
+            }
         }
     }
 
@@ -43,6 +46,7 @@ class Collection implements ArrayAccess, Countable, JsonSerializable, IteratorAg
      *
      * @throws InvalidArgumentException if the data is of wrong type
      */
+    #[\ReturnTypeWillChange]
     public function offsetSet($offset, $entity)
     {
         $this->exceptionOnInvalidType($entity);
@@ -85,6 +89,7 @@ class Collection implements ArrayAccess, Countable, JsonSerializable, IteratorAg
      *
      * @param  int|string $offset
      */
+    #[\ReturnTypeWillChange]
     public function offsetUnset($offset)
     {
         unset($this->entities[$offset]);
@@ -220,6 +225,7 @@ class Collection implements ArrayAccess, Countable, JsonSerializable, IteratorAg
      *
      * @return ArrayIterator
      */
+    #[\ReturnTypeWillChange]
     public function getIterator()
     {
         return new ArrayIterator($this->entities);
